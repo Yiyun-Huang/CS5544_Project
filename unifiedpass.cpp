@@ -1,3 +1,14 @@
+// =============================================================================
+// ECE/CS 5544 Group Project - Flow-Sensitive Per program point points-to analysis
+// 
+// This project is an implementation of the flow-sensitive per-program-point
+// points-to analysis. It implements a data flow analysis framework
+// where data flow values are maps from pointers to powersets of abstract objects.
+// 
+// Authors: Yiyun Huang and Megan Farran
+// =============================================================================
+
+
 #include <llvm/ADT/BitVector.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/IR/BasicBlock.h>
@@ -15,9 +26,9 @@ using namespace llvm;
 
 namespace {
 
-// ====================================
+// =============================================================================
 // Utils
-// ====================================
+// =============================================================================
 struct PointState {
     DenseMap<Value*, BitVector> in;
     DenseMap<Value*, BitVector> out;
@@ -38,14 +49,8 @@ void prettyPrintPointState(raw_ostream& OS, PointState ps, std::vector<Value*> a
         }
         OS << " }\n";
     }
-    
 }
 
-
-
-// ====================================
-// Functions used in DFA framework
-// ====================================
 // Meet operator: intersect 
 static BitVector meetIntersect(const std::vector<BitVector>& ins) {
   if (ins.empty()) return {};
@@ -76,65 +81,88 @@ static BitVector bitVectorSub(BitVector bv1, BitVector bv2) {
 
 struct PointsTo : PassInfoMixin<PointsTo> {
 
-  static DenseMap<Value*, BitVector> mergeDenseMaps(std::vector<DenseMap<Value*, BitVector>> maps) {
-    DenseMap<Value*, BitVector> newMap;
-    for (int i = 0; i < maps.size(); i ++) {
-        for (auto& [key, value] : maps[i]) {
-            auto it = newMap.find(key);
-            if (it != newMap.end()) {
-                // merge values
-                auto& newMapValue = it->second;
-                std::vector<BitVector> unionParams;
-                unionParams.push_back(newMapValue);
-                unionParams.push_back(value);
-                newMap[key] = meetUnion(unionParams);
+    // A helper function to merge multiple DenseMap<Value*, BitVector> objects. 
+    static DenseMap<Value*, BitVector> mergeDenseMaps(std::vector<DenseMap<Value*, BitVector>> maps) {
+        DenseMap<Value*, BitVector> newMap;
+        for (int i = 0; i < maps.size(); i ++) {    // loop through all of the maps
+
+            // for each map, if the key exists in newMap, merge the values. 
+            // if the key does not exist in newMap, add the key, value pair 
+            for (auto& [key, value] : maps[i]) {
+                auto it = newMap.find(key);
+                if (it != newMap.end()) {
+                    // merge values
+                    auto& newMapValue = it->second;
+                    std::vector<BitVector> unionParams;
+                    unionParams.push_back(newMapValue);
+                    unionParams.push_back(value);
+                    newMap[key] = meetUnion(unionParams);
+                } else {
+                    // add k,v pair to new map
+                    newMap.insert({key, value});
+                }
+            }
+        }
+        return newMap;
+    }
+
+    // Helper function to get the in set from an Instruction.
+    // The in set for an instruction is the out set of the previous instruction
+    // 
+    // If the instruction is the first instruction in the program,
+    // there is no previous instruction, so return an empty map.   
+    // 
+    // If the instruction is the first instruction in a basic block,
+    // take the last instruction from each predecessor of the basic block. 
+    static DenseMap<Value*, BitVector> getInSet(Instruction* Ins, DenseMap<const Instruction*, PointState> st, int size) {
+        Instruction* prevIns = Ins->getPrevNode();
+        if (prevIns == nullptr) {
+            if (Ins->getParent()->isEntryBlock()) {  // if the first instruciton in the program, in set is empty
+                DenseMap<Value*, BitVector> emptyMap;
+                return emptyMap;
             } else {
-                // add k,v pair to new map
-                newMap.insert({key, value});
+                // Ins is the first instruction in a BB. 
+                DenseMap<Value*, BitVector> newMap;
+                std::vector<DenseMap<Value*, BitVector>> predOutSets;
+
+                // for each predecessor, grab the last instruction in the predecessor
+                for (BasicBlock* pred : predecessors(Ins->getParent())) {
+                    Instruction* lastIns = &pred->back();
+                    DenseMap<Value*, BitVector> prevOut = st[lastIns].out;
+                    predOutSets.push_back(prevOut);
+                }   
+                // merge the predecessors outsets (this is akin to the union meet operator in typical data flow analysis)
+                return mergeDenseMaps(predOutSets);
             }
         }
+        return st[prevIns].out;     // return the out set from the previous instruction
     }
-    return newMap;
-  }
 
-  static DenseMap<Value*, BitVector> getInSet(Instruction* Ins, DenseMap<const Instruction*, PointState> st, int size) {
-    Instruction* prevIns = Ins->getPrevNode();
-    if (prevIns == nullptr) {
-        if (Ins->getParent()->isEntryBlock()) {  // if the first instruciton in the function, in set is empty
-            DenseMap<Value*, BitVector> emptyMap;
-            return emptyMap;
-        } else {
-            // Ins is the first instruction in a BB. 
-            DenseMap<Value*, BitVector> newMap;
-            std::vector<DenseMap<Value*, BitVector>> predOutSets;
-            for (BasicBlock* pred : predecessors(Ins->getParent())) {
-                Instruction* lastIns = &pred->back();
-                DenseMap<Value*, BitVector> prevOut = st[lastIns].out;
-                predOutSets.push_back(prevOut);
-            }   
-            return mergeDenseMaps(predOutSets);
-        }
-    }
-    return st[prevIns].out; 
-  }
-
-  static std::vector<Instruction*> getSuccessors(Instruction* Ins, Function& F) {
-    Instruction* prevIns = Ins->getPrevNode();
-    std::vector<Instruction*> succIns;
-    if (prevIns == nullptr) {
-        if (Ins->getParent() == &F.back()) {
-            return succIns;     // return empty bitvector
-        } else {
-            // collect successor instructions from all succ BBs:
-            for (BasicBlock* succ : successors(Ins->getParent())) {
-                succIns.push_back(&succ->front());
+    // Helper function to get the successors of an instruction
+    // The successor of an instruction is the next instruction after Ins
+    // 
+    // If the next instruction after Ins is the last instruciton in the function, 
+    // Ins has no successors
+    // 
+    // If Ins is the last instruction in a basic block, collect the first instruction
+    // from each successor of the current basic block
+    static std::vector<Instruction*> getSuccessors(Instruction* Ins, Function& F) {
+        Instruction* nextIns = Ins->getNextNode();
+        std::vector<Instruction*> succIns;
+        if (nextIns == nullptr) {
+            if (Ins->getParent() == &F.back()) {
+                return succIns;     // return empty bitvector
+            } else {
+                // collect successor instructions from all succ BBs:
+                for (BasicBlock* succ : successors(Ins->getParent())) {
+                    succIns.push_back(&succ->front());
+                }
             }
+        } else {
+            succIns.push_back(nextIns);     // just return next instruction after Ins
         }
-    } else {
-        succIns.push_back(prevIns);
+        return succIns;
     }
-    return succIns;
-  }
 
   static DenseMap<Value*, BitVector> transferFunc(Instruction* Ins, PointState ps, std::vector<Value*> abstractObjects, DominatorTree& DT, Function& F) {
     DenseMap<Value*, BitVector> outMap = ps.in;
@@ -254,7 +282,7 @@ struct PointsTo : PassInfoMixin<PointsTo> {
     // ===============================================
     DenseMap<const Instruction*, PointState> st;
 
-    // // Step 2: Build BFS traversal order starting from entry block
+    // Build BFS traversal order starting from entry block
     std::vector<Instruction*> order;
     std::vector<BasicBlock*> bbs;
     bbs.push_back(&F.getEntryBlock());
@@ -276,11 +304,11 @@ struct PointsTo : PassInfoMixin<PointsTo> {
     // worklist alg:
     std::vector<Instruction*> worklist;
     worklist = order;
-    // worklist.push_back(&(F.getEntryBlock().front()));
     for (int i = 0; i < worklist.size(); i ++) {
         Instruction* Ins = worklist[i];
-        // the in set of this instruction is the union of all of the previous instruction's outsets
         PointState ps;
+        
+        // the in set of this instruction is the union of all of the previous instruction's outsets
         ps.in = getInSet(Ins, st, abstractObjects.size());
         
         DenseMap<Value*, BitVector> newOut = transferFunc(Ins, ps, abstractObjects, DT, F);
