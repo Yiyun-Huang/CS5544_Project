@@ -186,9 +186,7 @@ struct PointsTo : PassInfoMixin<PointsTo> {
     // Stores of a pointer value
     else if (auto* Store = dyn_cast<StoreInst>(Ins)) {
         if (Store->getValueOperand()->getType()->isPointerTy()) {
-            // generate a points to relationship between operand(1) -> operand(0)
-            // operand 1 holds the target of the store, operand 1 will point to whatever operand 0 points to after this instruction
-            outs() << "store instruction: " << *Store << "\n";
+            // generate a points to relationship between getPointerOperand -> getValueOperand
             Value* aLoc = Store->getValueOperand(); 
             auto it = std::find(abstractObjects.begin(), abstractObjects.end(), aLoc);
           
@@ -201,21 +199,12 @@ struct PointsTo : PassInfoMixin<PointsTo> {
                 BitVector bv = outMap[Store->getValueOperand()];
                 BitVector ptrBv = outMap[Store->getPointerOperand()];
 
-
                 std::vector<BitVector> unionParams;
                 unionParams.push_back(bv);
                 unionParams.push_back(ptrBv);
                 BitVector unionSet = meetUnion(unionParams);
                 genSet = unionSet;
             }
-
-            outs() << "gen set: \n"; 
-            outs() << "{";
-            for (int i = 0; i < genSet.size(); i ++) {
-                outs() << genSet[i] << " ";
-            }
-            outs() << "} \n";
-
 
             // kill set:
             BitVector killSet(abstractObjects.size(), false);
@@ -228,13 +217,6 @@ struct PointsTo : PassInfoMixin<PointsTo> {
                     killSet = outMap[Store->getPointerOperand()];
                 }
             }
-
-            outs() << "kill set: \n"; 
-            outs() << "{";
-            for (int i = 0; i < killSet.size(); i ++) {
-                outs() << killSet[i] << " ";
-            }
-            outs() << "} \n";
 
             if (killSet.size() != 0) {
                 outMap[Store->getPointerOperand()] = bitVectorSub(genSet, killSet);
@@ -252,18 +234,13 @@ struct PointsTo : PassInfoMixin<PointsTo> {
     DominatorTree& DT = AM.getResult<DominatorTreeAnalysis>(F);
 
     // Dataflow objects are maps from pointers to powersets of abstract objects
-    // The number of abstract objects is = number of heap alloc calls
-    // The number of pointer variables in the program is the number of unique store targets
+    // The types of abstract objects are defined in the Anderson paper
     std::vector<Value*> abstractObjects;
     for (auto& BB : F) {
       for (auto& I : BB) {
         // stack allocations
         if (auto* Alloca = dyn_cast<AllocaInst>(&I)) {
-            // if (Alloca->getAllocatedType()->isPointerTy()) {
-                outs() << "ALLOC A GENERATING A STACK OBJECT \n";
-                abstractObjects.push_back(Alloca);
-            // }
-                
+            abstractObjects.push_back(Alloca); 
         }
         // Heap allocation (ex: call to malloc)
         if (auto* Call = dyn_cast<CallInst>(&I)) {
@@ -273,6 +250,8 @@ struct PointsTo : PassInfoMixin<PointsTo> {
       }
     }
 
+    // Include global variables as abstract locations (as per Anderson's paper)
+    // Reasoning: pointers can point to other pointers
     Module* M = F.getParent();
     for (auto& G : M->globals()) {
         if (G.getValueType()->isPointerTy()) {
