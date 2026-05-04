@@ -1,23 +1,9 @@
-// int foo(int * ptr) {
-//     return *ptr;
-// }
-
-// int main() {
-//     int x, y, *p;
-//     p = &x;
-//     foo(p);
-//     p = &y;
-//     return *p;
-// }
+// Example from lecture 14 slides
 
 #include <stdlib.h>
 
 int *a, *b;
 
-// void f() {
-//     q = malloc(sizeof(int) * 5);
-//     r = malloc(sizeof(int) * 5);
-// }
 
 int main() {
     a = malloc(sizeof(int) * 5);

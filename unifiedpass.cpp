@@ -188,10 +188,10 @@ struct PointsTo : PassInfoMixin<PointsTo> {
         if (Store->getValueOperand()->getType()->isPointerTy()) {
             // generate a points to relationship between operand(1) -> operand(0)
             // operand 1 holds the target of the store, operand 1 will point to whatever operand 0 points to after this instruction
-
+            outs() << "store instruction: " << *Store << "\n";
             Value* aLoc = Store->getValueOperand(); 
-            auto it = std::lower_bound(abstractObjects.begin(), abstractObjects.end(), aLoc);
-
+            auto it = std::find(abstractObjects.begin(), abstractObjects.end(), aLoc);
+          
             // gen set:
             BitVector genSet(abstractObjects.size(), false);  
             if (it != abstractObjects.end() && *it == aLoc) {
@@ -201,12 +201,20 @@ struct PointsTo : PassInfoMixin<PointsTo> {
                 BitVector bv = outMap[Store->getValueOperand()];
                 BitVector ptrBv = outMap[Store->getPointerOperand()];
 
+
                 std::vector<BitVector> unionParams;
                 unionParams.push_back(bv);
                 unionParams.push_back(ptrBv);
                 BitVector unionSet = meetUnion(unionParams);
                 genSet = unionSet;
             }
+
+            outs() << "gen set: \n"; 
+            outs() << "{";
+            for (int i = 0; i < genSet.size(); i ++) {
+                outs() << genSet[i] << " ";
+            }
+            outs() << "} \n";
 
 
             // kill set:
@@ -220,6 +228,13 @@ struct PointsTo : PassInfoMixin<PointsTo> {
                     killSet = outMap[Store->getPointerOperand()];
                 }
             }
+
+            outs() << "kill set: \n"; 
+            outs() << "{";
+            for (int i = 0; i < killSet.size(); i ++) {
+                outs() << killSet[i] << " ";
+            }
+            outs() << "} \n";
 
             if (killSet.size() != 0) {
                 outMap[Store->getPointerOperand()] = bitVectorSub(genSet, killSet);
@@ -243,17 +258,32 @@ struct PointsTo : PassInfoMixin<PointsTo> {
     for (auto& BB : F) {
       for (auto& I : BB) {
         // stack allocations
-        // if (auto* Alloca = dyn_cast<AllocaInst>(&I)) {
-        //     if (Alloca->getAllocatedType()->isPointerTy())
-        //         // ptrVariables.push_back(Alloca);
-        // }
+        if (auto* Alloca = dyn_cast<AllocaInst>(&I)) {
+            // if (Alloca->getAllocatedType()->isPointerTy()) {
+                outs() << "ALLOC A GENERATING A STACK OBJECT \n";
+                abstractObjects.push_back(Alloca);
+            // }
+                
+        }
         // Heap allocation (ex: call to malloc)
         if (auto* Call = dyn_cast<CallInst>(&I)) {
-            if (Call->getType()->isPointerTy())
+            if (Call->getType()->isPointerTy()) 
                 abstractObjects.push_back(Call);
         }
       }
     }
+
+    Module* M = F.getParent();
+    for (auto& G : M->globals()) {
+        if (G.getValueType()->isPointerTy()) {
+            abstractObjects.push_back(&G);
+        } 
+    }
+
+    // outs() << "abstract objects: \n";
+    // for (int i = 0; i < abstractObjects.size(); i ++) {
+    //     outs() << *(abstractObjects[i]) << "\n";
+    // }
 
 
     // =============================================================================
@@ -303,8 +333,30 @@ struct PointsTo : PassInfoMixin<PointsTo> {
         ps.in = getInSet(Ins, st, abstractObjects.size());
         
         DenseMap<Value*, BitVector> newOut = transferFunc(Ins, ps, abstractObjects, DT, F);
+        // outs() << "i: " << i << "\n";
 
-        if (ps.out != newOut) {     
+        if (ps.out != newOut) {    
+            // outs() << "=================================================\n";
+            // outs() << "i: " << i << "\n";
+            // outs() << "****ps.out: \n";
+            // for (auto& [key, value] : ps.out) {
+            //     outs() << "key: " << *key << "\n";
+            //     outs () << "value: \n";
+            //     for (int i = 0; i < value.size(); i ++) {
+            //         outs() << value[i] << " ";
+            //     }
+            //     outs() << "\n";
+            // }
+            // outs() << "****newOut: \n";
+            // for (auto& [key, value] : newOut) {
+            //     outs() << "key: " << *key << "\n";
+            //     outs () << "value: \n";
+            //     for (int i = 0; i < value.size(); i ++) {
+            //         outs() << value[i] << " ";
+            //     }
+            //     outs() << "\n";
+            // } 
+            // outs() << "=================================================\n";
             ps.out = newOut;
             std::vector<Instruction*> succInstructions = getSuccessors(Ins, F);
             for (int j = 0; j < succInstructions.size(); j ++) {
