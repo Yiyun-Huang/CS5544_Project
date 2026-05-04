@@ -183,7 +183,7 @@ struct PointsTo : PassInfoMixin<PointsTo> {
         }
             
     }
-    // // Stores of a pointer value
+    // Stores of a pointer value
     else if (auto* Store = dyn_cast<StoreInst>(Ins)) {
         if (Store->getValueOperand()->getType()->isPointerTy()) {
             // generate a points to relationship between operand(1) -> operand(0)
@@ -209,11 +209,11 @@ struct PointsTo : PassInfoMixin<PointsTo> {
             }
 
 
-            // // kill set:
+            // kill set:
             BitVector killSet(abstractObjects.size(), false);
-            // // strong updates = singleton, nonconditional updates
+            // strong updates = singleton, nonconditional updates
             BasicBlock* exitBlock = &F.back();
-            // // check singletons:
+            // check singletons:
             if (outMap[Store->getPointerOperand()].count() <= 1) {
                 // check conditional updates:
                 if (DT.dominates(Ins->getParent(), exitBlock)) {
@@ -239,47 +239,26 @@ struct PointsTo : PassInfoMixin<PointsTo> {
     // Dataflow objects are maps from pointers to powersets of abstract objects
     // The number of abstract objects is = number of heap alloc calls
     // The number of pointer variables in the program is the number of unique store targets
-    DenseMap<Value*, BitVector> universe;
     std::vector<Value*> abstractObjects;
-    std::vector<Value*> ptrVariables;
     for (auto& BB : F) {
       for (auto& I : BB) {
-        if (auto* Alloca = dyn_cast<AllocaInst>(&I)) {
-            if (Alloca->getAllocatedType()->isPointerTy())
-                ptrVariables.push_back(Alloca);
-        }
-        // Heap allocation (call to malloc etc.)
+        // stack allocations
+        // if (auto* Alloca = dyn_cast<AllocaInst>(&I)) {
+        //     if (Alloca->getAllocatedType()->isPointerTy())
+        //         // ptrVariables.push_back(Alloca);
+        // }
+        // Heap allocation (ex: call to malloc)
         if (auto* Call = dyn_cast<CallInst>(&I)) {
             if (Call->getType()->isPointerTy())
                 abstractObjects.push_back(Call);
         }
-
-        if (auto* Load = dyn_cast<LoadInst>(&I)) {
-            if (Load->getType()->isPointerTy())
-                ptrVariables.push_back(Load);
-        }
-        
       }
     }
 
-    Module* M = F.getParent();
-    for (auto& G : M->globals()) {
-        if (G.getValueType()->isPointerTy()) {
-            ptrVariables.push_back(&G);
-        } 
-    }
 
-    BitVector boundaryCondition(abstractObjects.size(), false);
-    BitVector initialValues(abstractObjects.size(), false); 
-
-    for (int i = 0; i < ptrVariables.size(); i ++) {
-        universe[ptrVariables[i]] = boundaryCondition;
-    }
-
-
-    // ===============================================
+    // =============================================================================
     // ITERATIVE ALG
-    // ===============================================
+    // =============================================================================
     DenseMap<const Instruction*, PointState> st;
 
     // Build BFS traversal order starting from entry block
@@ -300,20 +279,32 @@ struct PointsTo : PassInfoMixin<PointsTo> {
       }
     }
 
-
-    // worklist alg:
+    // -----------------------------------------------------------------------------
+    // WORKLIST ALGORITHM
+    // 
+    // The worklist initially contains all instructions in the program. 
+    // Upon each iteration, compare to see if the out set of the current instruction 
+    // has changed. If is has, add all of the instruction's successors to the worklist.
+    // If the instruction's out set has not changed, continue iterating through the 
+    // worklist. 
+    // 
+    // Upon each iteration, calculate the in set of an instruction. 
+    //      IN[Ins] = union of OUT[pred] for all predecessor instructions
+    // Then, utilize the transfer funciton to find the new out set. The transfer
+    // function handles the generating, killing, and propogation of points-to 
+    // relationships. 
+    // -----------------------------------------------------------------------------
     std::vector<Instruction*> worklist;
     worklist = order;
     for (int i = 0; i < worklist.size(); i ++) {
         Instruction* Ins = worklist[i];
-        PointState ps;
-        
-        // the in set of this instruction is the union of all of the previous instruction's outsets
+        PointState ps = st[Ins];
+
         ps.in = getInSet(Ins, st, abstractObjects.size());
         
         DenseMap<Value*, BitVector> newOut = transferFunc(Ins, ps, abstractObjects, DT, F);
 
-        if (ps.out != newOut) {
+        if (ps.out != newOut) {     
             ps.out = newOut;
             std::vector<Instruction*> succInstructions = getSuccessors(Ins, F);
             for (int j = 0; j < succInstructions.size(); j ++) {

@@ -37,4 +37,4 @@ run_bench () {
 
 }
 
-run_bench test.c
+run_bench test2.c
