@@ -164,6 +164,18 @@ struct PointsTo : PassInfoMixin<PointsTo> {
         return succIns;
     }
 
+    // given a value, return the set of aLocs that that value points to
+    static std::vector<Value*> getPointsToValue(DenseMap<Value*, BitVector> pointsToInfo, Value* pointer, std::vector<Value*> abstractObjects) {
+        BitVector bv = pointsToInfo[pointer];
+        std::vector<Value*> rtn;
+
+        for (unsigned i = 0; i < bv.size(); ++i) {
+            if (!bv.test(i)) continue;
+            rtn.push_back(abstractObjects[i]);
+        }
+        return rtn;
+    }   
+
   static DenseMap<Value*, BitVector> transferFunc(Instruction* Ins, PointState ps, std::vector<Value*> abstractObjects, DominatorTree& DT, Function& F) {
     DenseMap<Value*, BitVector> outMap = ps.in;
     if (auto* Load = dyn_cast<LoadInst>(Ins)) {
@@ -171,9 +183,20 @@ struct PointsTo : PassInfoMixin<PointsTo> {
             // generates a points to relationship between the Value of the load and the load's getPointerOperand
             // union the points to sets of the Value and the pointerOperand
 
+            Value* pointerOperand = Load->getPointerOperand();
+            auto it2 = std::find(abstractObjects.begin(), abstractObjects.end(), pointerOperand);
+
+            // if loading from a non abstract object
+            if (it2 == abstractObjects.end() && *it2 != pointerOperand) {
+                std::vector<Value*> pointerTargets = getPointsToValue(outMap, pointerOperand, abstractObjects);
+                if (pointerTargets.size() == 1) {  //make a test case for this
+                    pointerOperand = pointerTargets[0];
+                }
+            }
+
             // handles assignments
             BitVector bv = outMap[Load];
-            BitVector ptrBv = outMap[Load->getPointerOperand()];
+            BitVector ptrBv = outMap[pointerOperand];
 
             std::vector<BitVector> unionParams;
             unionParams.push_back(bv);
@@ -187,8 +210,27 @@ struct PointsTo : PassInfoMixin<PointsTo> {
     else if (auto* Store = dyn_cast<StoreInst>(Ins)) {
         if (Store->getValueOperand()->getType()->isPointerTy()) {
             // generate a points to relationship between getPointerOperand -> getValueOperand
+            outs() << "store ins: " << *Store << "\n";
+
             Value* aLoc = Store->getValueOperand(); 
             auto it = std::find(abstractObjects.begin(), abstractObjects.end(), aLoc);
+            Value* pointerOperand = Store->getPointerOperand();
+            auto it2 = std::find(abstractObjects.begin(), abstractObjects.end(), pointerOperand);
+
+            // handles instructions in the form *c = a;
+            // if the store target is not an abstract location, need to find the abstract location that 
+            // the store target points to
+            if (it2 == abstractObjects.end() && *it2 != pointerOperand) {
+                if (auto* Load = dyn_cast<LoadInst>(pointerOperand)) {
+                    if (Load->getType()->isPointerTy()) {
+                        // need to get the value that c points to in order to assign it
+                        std::vector<Value*> pointerTargets = getPointsToValue(outMap, Load, abstractObjects);
+                        if (pointerTargets.size() == 1) {  //make a test case for this
+                            pointerOperand = pointerTargets[0];
+                        }
+                    }
+                }
+            }
           
             // gen set:
             BitVector genSet(abstractObjects.size(), false);  
@@ -206,6 +248,7 @@ struct PointsTo : PassInfoMixin<PointsTo> {
                 genSet = unionSet;
             }
 
+
             // kill set:
             BitVector killSet(abstractObjects.size(), false);
             // strong updates = singleton, nonconditional updates
@@ -219,9 +262,9 @@ struct PointsTo : PassInfoMixin<PointsTo> {
             }
 
             if (killSet.size() != 0) {
-                outMap[Store->getPointerOperand()] = bitVectorSub(genSet, killSet);
+                outMap[pointerOperand] = bitVectorSub(genSet, killSet);
             } else {
-                outMap[Store->getPointerOperand()] = genSet;
+                outMap[pointerOperand] = genSet;
             }
             
         }
@@ -312,30 +355,8 @@ struct PointsTo : PassInfoMixin<PointsTo> {
         ps.in = getInSet(Ins, st, abstractObjects.size());
         
         DenseMap<Value*, BitVector> newOut = transferFunc(Ins, ps, abstractObjects, DT, F);
-        // outs() << "i: " << i << "\n";
 
         if (ps.out != newOut) {    
-            // outs() << "=================================================\n";
-            // outs() << "i: " << i << "\n";
-            // outs() << "****ps.out: \n";
-            // for (auto& [key, value] : ps.out) {
-            //     outs() << "key: " << *key << "\n";
-            //     outs () << "value: \n";
-            //     for (int i = 0; i < value.size(); i ++) {
-            //         outs() << value[i] << " ";
-            //     }
-            //     outs() << "\n";
-            // }
-            // outs() << "****newOut: \n";
-            // for (auto& [key, value] : newOut) {
-            //     outs() << "key: " << *key << "\n";
-            //     outs () << "value: \n";
-            //     for (int i = 0; i < value.size(); i ++) {
-            //         outs() << value[i] << " ";
-            //     }
-            //     outs() << "\n";
-            // } 
-            // outs() << "=================================================\n";
             ps.out = newOut;
             std::vector<Instruction*> succInstructions = getSuccessors(Ins, F);
             for (int j = 0; j < succInstructions.size(); j ++) {
