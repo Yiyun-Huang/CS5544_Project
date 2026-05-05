@@ -5,49 +5,26 @@
 
 int * a; 
 int * b;
+int * e;
+int * f;
+int * g;
 int ** c;
-
-// int main() {
-//     a = malloc(1 * sizeof(int));
-//     int x = 10;
-//     // a = &x;
-//     c = &b;
-//     b = &x;
-
-//     a = *c;
-//     // *c = a;
-//     return 0;
-// }
-
-// int main() {
-//     a = malloc(1 * sizeof(int));
-//     int x = 10;
-//     a = &x;
-//     c = &b;
-//     // b = &x;
-
-//     // a = *c;
-//     *c = a;
-//     return 0;
-// }
-
-// int main() {
-//     a = malloc(1 * sizeof(int));
-//     int x = 10;
-//     c = &b;
-//     *c = &x;
-//     return 0;
-// }
-
 int ** d;
 
 int main() {
     int x = 10;
-    c = &b;
-    d = &a;
+    int y = 20;
     a = &x;
+    c = &b;
+    *c = a;
+    
+    e = *c;
 
-    *c = *d;
-    return 0;
+    d = &f;
+    *d = &y;
+
+    if (x) {
+        *d = *c;
+    }
+    g = f;
 }
-

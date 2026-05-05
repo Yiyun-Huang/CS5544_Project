@@ -210,7 +210,7 @@ struct PointsTo : PassInfoMixin<PointsTo> {
     else if (auto* Store = dyn_cast<StoreInst>(Ins)) {
         if (Store->getValueOperand()->getType()->isPointerTy()) {
             // generate a points to relationship between getPointerOperand -> getValueOperand
-            outs() << "store ins: " << *Store << "\n";
+            // outs() << "store ins: " << *Store << "\n";
 
             Value* aLoc = Store->getValueOperand(); 
             auto it = std::find(abstractObjects.begin(), abstractObjects.end(), aLoc);
@@ -239,7 +239,7 @@ struct PointsTo : PassInfoMixin<PointsTo> {
             } else {
                 // handles assignments
                 BitVector bv = outMap[Store->getValueOperand()];
-                BitVector ptrBv = outMap[Store->getPointerOperand()];
+                BitVector ptrBv = outMap[pointerOperand];
 
                 std::vector<BitVector> unionParams;
                 unionParams.push_back(bv);
@@ -254,10 +254,10 @@ struct PointsTo : PassInfoMixin<PointsTo> {
             // strong updates = singleton, nonconditional updates
             BasicBlock* exitBlock = &F.back();
             // check singletons:
-            if (outMap[Store->getPointerOperand()].count() <= 1) {
+            if (outMap[pointerOperand].count() <= 1) {
                 // check conditional updates:
                 if (DT.dominates(Ins->getParent(), exitBlock)) {
-                    killSet = outMap[Store->getPointerOperand()];
+                    killSet = outMap[pointerOperand];
                 }
             }
 

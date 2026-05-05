@@ -37,4 +37,5 @@ run_bench () {
 
 }
 
-run_bench test2.c
+run_bench complex-pointer-types.c
+# run_bench test.c
