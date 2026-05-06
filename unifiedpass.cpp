@@ -402,7 +402,7 @@ struct FlowSensitivePointsTo : PassInfoMixin<FlowSensitivePointsTo> {
     }
 
     // Transfer function: OUT[Ins] from IN[Ins].
-    static PointState transferFunc(Instruction* Ins, PointState ps, DenseMap<Value*, BitVector> prevIn, std::vector<Value*> abstractObjects) {
+    static PointState setUpGenKill(Instruction* Ins, PointState ps, DenseMap<Value*, BitVector> prevIn, std::vector<Value*> abstractObjects) {
         BitVector constGen(abstractObjects.size(), false); 
         BitVector depGen(abstractObjects.size(), false); 
         BitVector constKill(abstractObjects.size(), true); 
@@ -471,6 +471,16 @@ struct FlowSensitivePointsTo : PassInfoMixin<FlowSensitivePointsTo> {
         return ps;
     }
 
+    static DenseMap<Value*, BitVector> transferFunction(DenseMap<Value*, BitVector> in, 
+                                                              DenseMap<Value*, BitVector> kill, 
+                                                              DenseMap<Value*, BitVector> gen) {
+        DenseMap<Value*, BitVector> temp = denseMapSub(in, kill);
+        std::vector<DenseMap<Value*, BitVector>> unionParams;
+        unionParams.push_back(temp);
+        unionParams.push_back(gen);
+        return mergeDenseMaps(unionParams);
+    }
+
 
     PreservedAnalyses run(Function& F, FunctionAnalysisManager& AM) {
         std::vector<Value*> abstractObjects = collectAbstractObjects(F);
@@ -507,8 +517,8 @@ struct FlowSensitivePointsTo : PassInfoMixin<FlowSensitivePointsTo> {
             ps.mustin = getInSet(Ins, st, true);
             ps.in = getInSet(Ins, st, false);
 
-            PointState newMayPs = transferFunc(Ins, ps, ps.in, abstractObjects);
-            PointState newMustPs = transferFunc(Ins, ps, ps.mustin, abstractObjects);
+            PointState newMayPs = setUpGenKill(Ins, ps, ps.in, abstractObjects);    // depgen and depkill will be dependent on May In values
+            PointState newMustPs = setUpGenKill(Ins, ps, ps.mustin, abstractObjects);   // depgen and depkill will be dependent Must In values
 
             std::vector<DenseMap<Value*, BitVector>> unionParams;
             unionParams.push_back(newMayPs.kill);
@@ -530,26 +540,16 @@ struct FlowSensitivePointsTo : PassInfoMixin<FlowSensitivePointsTo> {
             unionParams.push_back(newMustPs.depgen);
             DenseMap<Value*, BitVector> gensetMust = mergeDenseMaps(unionParams);
 
-            // kill = kill - gen
+            // kill = kill - gen (if something is both generated and killed, generation wins)
             killsetMay = denseMapSub(killsetMay, gensetMay);
             killsetMust = denseMapSub(killsetMust, gensetMust);
 
 
-            // mayout (transfer func):
-            newMayPs.out = denseMapSub(ps.in, killsetMust);
-            unionParams.clear();
-            unionParams.push_back(newMayPs.out);
-            unionParams.push_back(gensetMay);
-            newMayPs.out = mergeDenseMaps(unionParams);
+            // mayout 
+            newMayPs.out = transferFunction(ps.in, killsetMust, gensetMay);
 
-
-            //mayin (transfer func):
-            newMustPs.mustout = denseMapSub(ps.mustin, killsetMay);
-            unionParams.clear();
-            unionParams.push_back(newMustPs.mustout);
-            unionParams.push_back(gensetMust);
-            newMustPs.mustout = mergeDenseMaps(unionParams);
-
+            //mayin
+            newMustPs.mustout = transferFunction(ps.mustin, killsetMay, gensetMust);
 
             if (ps.out != newMayPs.out || ps.mustout != newMustPs.mustout) {
                 ps.out = newMayPs.out;
