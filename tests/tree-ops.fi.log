@@ -1,0 +1,107 @@
+Function-level point-to map [flow-insensitive]: 
+Function: make_tree_node
+
+=== Evaluation Metrics [flow-insensitive] for function 'make_tree_node' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.019 ms
+  program points analyzed            : 10
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: tree_insert
+  g_root: { call }
+
+=== Evaluation Metrics [flow-insensitive] for function 'tree_insert' ===
+  pointer variables tracked          : 1
+  avg points-to set size             : 1.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.030 ms
+  program points analyzed            : 37
+  abstract objects                   : 2
+  fixpoint iterations                : 3
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: tree_find
+
+=== Evaluation Metrics [flow-insensitive] for function 'tree_find' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.003 ms
+  program points analyzed            : 25
+  abstract objects                   : 1
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: tree_size
+
+=== Evaluation Metrics [flow-insensitive] for function 'tree_size' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.007 ms
+  program points analyzed            : 46
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: tree_mirror
+
+=== Evaluation Metrics [flow-insensitive] for function 'tree_mirror' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.009 ms
+  program points analyzed            : 51
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: tree_sum_keys
+
+=== Evaluation Metrics [flow-insensitive] for function 'tree_sum_keys' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.007 ms
+  program points analyzed            : 48
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: tree_destroy
+  g_root: {  }
+
+=== Evaluation Metrics [flow-insensitive] for function 'tree_destroy' ===
+  pointer variables tracked          : 1
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.007 ms
+  program points analyzed            : 45
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: main
+  g_root: {  }
+
+=== Evaluation Metrics [flow-insensitive] for function 'main' ===
+  pointer variables tracked          : 1
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.002 ms
+  program points analyzed            : 33
+  abstract objects                   : 3
+  fixpoint iterations                : 1
+============================================

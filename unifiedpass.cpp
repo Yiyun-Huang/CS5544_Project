@@ -1,10 +1,22 @@
 // =============================================================================
-// ECE/CS 5544 Group Project - Flow-Sensitive Per program point points-to analysis
-// 
-// This project is an implementation of the flow-sensitive per-program-point
-// points-to analysis. It implements a data flow analysis framework
-// where data flow values are maps from pointers to powersets of abstract objects.
-// 
+// ECE/CS 5544 Group Project - Points-to analyses (flow-sensitive + baseline)
+//
+// This file implements two LLVM passes that share infrastructure for
+// abstract-object collection and metric reporting:
+//
+//   1. flow-sensitive-points-to-analysis (FlowSensitivePointsTo)
+//      Per-program-point points-to maps, embedded in a worklist dataflow
+//      framework. Strong-vs-weak update is decided per store using a
+//      dominator-based heuristic.
+//
+//   2. flow-insensitive-points-to-analysis (FlowInsensitivePointsTo)
+//      Classic Andersen-style inclusion-constraint analysis:
+//      one points-to map per function, all stores are weak updates,
+//      iterated to a fixed point. This is our primary baseline.
+//
+// Both passes report the same evaluation metrics so the two can be compared
+// directly on the same input.
+//
 // Authors: Yiyun Huang and Megan Farran
 // =============================================================================
 
@@ -21,20 +33,23 @@
 #include <llvm/Support/raw_ostream.h>
 #include "llvm/IR/Dominators.h"
 
+#include <chrono>
+#include <set>
+
 
 using namespace llvm;
 
 namespace {
 
 // =============================================================================
-// Utils
+// Shared utilities
 // =============================================================================
 struct PointState {
     DenseMap<Value*, BitVector> in;
     DenseMap<Value*, BitVector> out;
-    DenseMap<Value*, BitVector> gen;   
-    DenseMap<Value*, BitVector> kill; 
-  };
+    DenseMap<Value*, BitVector> gen;
+    DenseMap<Value*, BitVector> kill;
+};
 
 void prettyPrintPointState(raw_ostream& OS, PointState ps, std::vector<Value*> abstractObjects) {
     for (auto& [key, value] : ps.out) {
@@ -51,54 +66,250 @@ void prettyPrintPointState(raw_ostream& OS, PointState ps, std::vector<Value*> a
     }
 }
 
-// Meet operator: intersect 
-static BitVector meetIntersect(const std::vector<BitVector>& ins) {
-  if (ins.empty()) return {};
-  BitVector out = ins[0];
-  for (size_t i = 1; i < ins.size(); ++i) out &= ins[i];
-  return out;
-}
-
-// Meet operator: union 
-static BitVector meetUnion(const std::vector<BitVector>& ins) {
-  if (ins.empty()) return {};
-  BitVector out = ins[0];
-  for (size_t i = 1; i < ins.size(); ++i) out |= ins[i];
-  return out;
-}
-
-// Set difference: bv1 - bv2 (clears bits in bv1 that are also set in bv2)
-static BitVector bitVectorSub(BitVector bv1, BitVector bv2) {
-  if (bv1.size() != bv2.size()) return {};
-  for (int i = 0; i < bv1.size(); ++i) {
-    if (bv1[i] == 1 && bv2[i] == 1) {
-      bv1.flip(static_cast<unsigned>(i));
+void prettyPrintMap(raw_ostream& OS, const DenseMap<Value*, BitVector>& m,
+                    const std::vector<Value*>& abstractObjects) {
+    for (auto& [key, value] : m) {
+        if (key->getName() == "") continue;
+        OS << "  " << key->getName() << ": { ";
+        bool first = true;
+        for (unsigned i = 0; i < value.size(); ++i) {
+            if (!value.test(i)) continue;
+            if (!first) OS << "; ";
+            first = false;
+            OS << abstractObjects[i]->getName();
+        }
+        OS << " }\n";
     }
-  }
-  return bv1;
+}
+
+static BitVector meetIntersect(const std::vector<BitVector>& ins) {
+    if (ins.empty()) return {};
+    BitVector out = ins[0];
+    for (size_t i = 1; i < ins.size(); ++i) out &= ins[i];
+    return out;
+}
+
+static BitVector meetUnion(const std::vector<BitVector>& ins) {
+    if (ins.empty()) return {};
+    BitVector out = ins[0];
+    for (size_t i = 1; i < ins.size(); ++i) out |= ins[i];
+    return out;
+}
+
+static BitVector bitVectorSub(BitVector bv1, BitVector bv2) {
+    if (bv1.size() != bv2.size()) return {};
+    for (int i = 0; i < bv1.size(); ++i) {
+        if (bv1[i] == 1 && bv2[i] == 1) {
+            bv1.flip(static_cast<unsigned>(i));
+        }
+    }
+    return bv1;
+}
+
+// Collect abstract objects: stack allocas, malloc-like calls returning a
+// pointer, and module-level pointer-typed globals. Both passes use this.
+static std::vector<Value*> collectAbstractObjects(Function& F) {
+    std::vector<Value*> abstractObjects;
+    for (auto& BB : F) {
+        for (auto& I : BB) {
+            if (auto* Alloca = dyn_cast<AllocaInst>(&I)) {
+                abstractObjects.push_back(Alloca);
+            }
+            if (auto* Call = dyn_cast<CallInst>(&I)) {
+                if (Call->getType()->isPointerTy())
+                    abstractObjects.push_back(Call);
+            }
+        }
+    }
+    Module* M = F.getParent();
+    for (auto& G : M->globals()) {
+        if (G.getValueType()->isPointerTy()) {
+            abstractObjects.push_back(&G);
+        }
+    }
+    return abstractObjects;
+}
+
+// Decode a BitVector into the list of abstract locations it represents.
+static std::vector<Value*> getPointsToValue(const DenseMap<Value*, BitVector>& pointsToInfo,
+                                            Value* pointer,
+                                            const std::vector<Value*>& abstractObjects) {
+    auto it = pointsToInfo.find(pointer);
+    std::vector<Value*> rtn;
+    if (it == pointsToInfo.end()) return rtn;
+    const BitVector& bv = it->second;
+    for (unsigned i = 0; i < bv.size(); ++i) {
+        if (!bv.test(i)) continue;
+        rtn.push_back(abstractObjects[i]);
+    }
+    return rtn;
+}
+
+// =============================================================================
+// Metric reporting: shared across both passes so the same shape of output
+// shows up no matter which pass is producing it.
+// =============================================================================
+
+// Compute and print metrics from a per-program-point map (flow-sensitive case).
+static void reportMetricsPerPoint(raw_ostream& OS,
+                                  Function& F,
+                                  const std::vector<Instruction*>& order,
+                                  const DenseMap<const Instruction*, PointState>& st,
+                                  std::size_t abstractObjCount,
+                                  std::size_t worklistIters,
+                                  double analysisTimeMs,
+                                  StringRef passLabel) {
+    double avgSize = 0.0;
+    unsigned numPointers = 0;
+    if (!order.empty()) {
+        const Instruction* exit = order.back();
+        auto exitIt = st.find(exit);
+        if (exitIt != st.end()) {
+            const auto& exitOut = exitIt->second.out;
+            unsigned totalBits = 0;
+            for (const auto& kv : exitOut) {
+                if (kv.first->getName().empty()) continue;
+                numPointers++;
+                totalBits += kv.second.count();
+            }
+            if (numPointers > 0) {
+                avgSize = static_cast<double>(totalBits) / static_cast<double>(numPointers);
+            }
+        }
+    }
+
+    std::set<std::pair<Value*, Value*>> mayPairs;
+    std::set<std::pair<Value*, Value*>> mustPairs;
+
+    for (const Instruction* I : order) {
+        auto it = st.find(I);
+        if (it == st.end()) continue;
+        const auto& m = it->second.out;
+
+        std::vector<std::pair<Value*, BitVector>> ptrs;
+        ptrs.reserve(m.size());
+        for (const auto& kv : m) {
+            if (kv.first->getName().empty()) continue;
+            if (kv.second.count() == 0) continue;
+            ptrs.push_back({kv.first, kv.second});
+        }
+
+        for (size_t i = 0; i < ptrs.size(); ++i) {
+            for (size_t j = i + 1; j < ptrs.size(); ++j) {
+                Value* a = ptrs[i].first;
+                Value* b = ptrs[j].first;
+                Value* lo = a < b ? a : b;
+                Value* hi = a < b ? b : a;
+
+                BitVector inter = ptrs[i].second;
+                inter &= ptrs[j].second;
+                if (inter.count() == 0) continue;
+
+                mayPairs.insert({lo, hi});
+
+                if (ptrs[i].second.count() == 1
+                    && ptrs[j].second.count() == 1
+                    && ptrs[i].second == ptrs[j].second) {
+                    mustPairs.insert({lo, hi});
+                }
+            }
+        }
+    }
+
+    OS << "\n=== Evaluation Metrics [" << passLabel << "] for function '" << F.getName() << "' ===\n";
+    OS << "  pointer variables tracked at exit : " << numPointers << "\n";
+    OS << "  avg points-to set size at exit    : " << format("%.3f", avgSize) << "\n";
+    OS << "  #may-alias pairs   (any point)    : " << mayPairs.size() << "\n";
+    OS << "  #must-alias pairs  (any point)    : " << mustPairs.size() << "\n";
+    OS << "  analysis time                     : " << format("%.3f ms", analysisTimeMs) << "\n";
+    OS << "  program points analyzed           : " << order.size() << "\n";
+    OS << "  abstract objects                  : " << abstractObjCount << "\n";
+    OS << "  worklist iterations               : " << worklistIters << "\n";
+    OS << "============================================\n";
+}
+
+// Compute and print metrics from a single (flow-insensitive) map.
+static void reportMetricsSingle(raw_ostream& OS,
+                                Function& F,
+                                const DenseMap<Value*, BitVector>& m,
+                                std::size_t abstractObjCount,
+                                std::size_t numProgramPoints,
+                                std::size_t iterations,
+                                double analysisTimeMs,
+                                StringRef passLabel) {
+    double avgSize = 0.0;
+    unsigned numPointers = 0;
+    unsigned totalBits = 0;
+    for (const auto& kv : m) {
+        if (kv.first->getName().empty()) continue;
+        numPointers++;
+        totalBits += kv.second.count();
+    }
+    if (numPointers > 0) {
+        avgSize = static_cast<double>(totalBits) / static_cast<double>(numPointers);
+    }
+
+    std::set<std::pair<Value*, Value*>> mayPairs;
+    std::set<std::pair<Value*, Value*>> mustPairs;
+
+    std::vector<std::pair<Value*, BitVector>> ptrs;
+    ptrs.reserve(m.size());
+    for (const auto& kv : m) {
+        if (kv.first->getName().empty()) continue;
+        if (kv.second.count() == 0) continue;
+        ptrs.push_back({kv.first, kv.second});
+    }
+    for (size_t i = 0; i < ptrs.size(); ++i) {
+        for (size_t j = i + 1; j < ptrs.size(); ++j) {
+            Value* a = ptrs[i].first;
+            Value* b = ptrs[j].first;
+            Value* lo = a < b ? a : b;
+            Value* hi = a < b ? b : a;
+
+            BitVector inter = ptrs[i].second;
+            inter &= ptrs[j].second;
+            if (inter.count() == 0) continue;
+
+            mayPairs.insert({lo, hi});
+
+            if (ptrs[i].second.count() == 1
+                && ptrs[j].second.count() == 1
+                && ptrs[i].second == ptrs[j].second) {
+                mustPairs.insert({lo, hi});
+            }
+        }
+    }
+
+    OS << "\n=== Evaluation Metrics [" << passLabel << "] for function '" << F.getName() << "' ===\n";
+    OS << "  pointer variables tracked          : " << numPointers << "\n";
+    OS << "  avg points-to set size             : " << format("%.3f", avgSize) << "\n";
+    OS << "  #may-alias pairs                   : " << mayPairs.size() << "\n";
+    OS << "  #must-alias pairs                  : " << mustPairs.size() << "\n";
+    OS << "  analysis time                      : " << format("%.3f ms", analysisTimeMs) << "\n";
+    OS << "  program points analyzed            : " << numProgramPoints << "\n";
+    OS << "  abstract objects                   : " << abstractObjCount << "\n";
+    OS << "  fixpoint iterations                : " << iterations << "\n";
+    OS << "============================================\n";
 }
 
 
-struct PointsTo : PassInfoMixin<PointsTo> {
+// =============================================================================
+// Pass 1: flow-sensitive points-to analysis
+// =============================================================================
+struct FlowSensitivePointsTo : PassInfoMixin<FlowSensitivePointsTo> {
 
-    // A helper function to merge multiple DenseMap<Value*, BitVector> objects. 
     static DenseMap<Value*, BitVector> mergeDenseMaps(std::vector<DenseMap<Value*, BitVector>> maps) {
         DenseMap<Value*, BitVector> newMap;
-        for (int i = 0; i < maps.size(); i ++) {    // loop through all of the maps
-
-            // for each map, if the key exists in newMap, merge the values. 
-            // if the key does not exist in newMap, add the key, value pair 
+        for (int i = 0; i < (int)maps.size(); i++) {
             for (auto& [key, value] : maps[i]) {
                 auto it = newMap.find(key);
                 if (it != newMap.end()) {
-                    // merge values
                     auto& newMapValue = it->second;
                     std::vector<BitVector> unionParams;
                     unionParams.push_back(newMapValue);
                     unionParams.push_back(value);
                     newMap[key] = meetUnion(unionParams);
                 } else {
-                    // add k,v pair to new map
                     newMap.insert({key, value});
                 }
             }
@@ -106,295 +317,338 @@ struct PointsTo : PassInfoMixin<PointsTo> {
         return newMap;
     }
 
-    // Helper function to get the in set from an Instruction.
-    // The in set for an instruction is the out set of the previous instruction
-    // 
-    // If the instruction is the first instruction in the program,
-    // there is no previous instruction, so return an empty map.   
-    // 
-    // If the instruction is the first instruction in a basic block,
-    // take the last instruction from each predecessor of the basic block. 
-    static DenseMap<Value*, BitVector> getInSet(Instruction* Ins, DenseMap<const Instruction*, PointState> st, int size) {
+    static DenseMap<Value*, BitVector> getInSet(Instruction* Ins,
+                                                DenseMap<const Instruction*, PointState> st,
+                                                int /*size*/) {
         Instruction* prevIns = Ins->getPrevNode();
         if (prevIns == nullptr) {
-            if (Ins->getParent()->isEntryBlock()) {  // if the first instruciton in the program, in set is empty
+            if (Ins->getParent()->isEntryBlock()) {
                 DenseMap<Value*, BitVector> emptyMap;
                 return emptyMap;
             } else {
-                // Ins is the first instruction in a BB. 
-                DenseMap<Value*, BitVector> newMap;
                 std::vector<DenseMap<Value*, BitVector>> predOutSets;
-
-                // for each predecessor, grab the last instruction in the predecessor
                 for (BasicBlock* pred : predecessors(Ins->getParent())) {
                     Instruction* lastIns = &pred->back();
-                    DenseMap<Value*, BitVector> prevOut = st[lastIns].out;
-                    predOutSets.push_back(prevOut);
-                }   
-                // merge the predecessors outsets (this is akin to the union meet operator in typical data flow analysis)
+                    predOutSets.push_back(st[lastIns].out);
+                }
                 return mergeDenseMaps(predOutSets);
             }
         }
-        return st[prevIns].out;     // return the out set from the previous instruction
+        return st[prevIns].out;
     }
 
-    // Helper function to get the successors of an instruction
-    // The successor of an instruction is the next instruction after Ins
-    // 
-    // If the next instruction after Ins is the last instruciton in the function, 
-    // Ins has no successors
-    // 
-    // If Ins is the last instruction in a basic block, collect the first instruction
-    // from each successor of the current basic block
     static std::vector<Instruction*> getSuccessors(Instruction* Ins, Function& F) {
         Instruction* nextIns = Ins->getNextNode();
         std::vector<Instruction*> succIns;
         if (nextIns == nullptr) {
             if (Ins->getParent() == &F.back()) {
-                return succIns;     // return empty bitvector
+                return succIns;
             } else {
-                // collect successor instructions from all succ BBs:
                 for (BasicBlock* succ : successors(Ins->getParent())) {
                     succIns.push_back(&succ->front());
                 }
             }
         } else {
-            succIns.push_back(nextIns);     // just return next instruction after Ins
+            succIns.push_back(nextIns);
         }
         return succIns;
     }
 
-    // given a value, return the set of aLocs that that value points to
-    static std::vector<Value*> getPointsToValue(DenseMap<Value*, BitVector> pointsToInfo, Value* pointer, std::vector<Value*> abstractObjects) {
-        BitVector bv = pointsToInfo[pointer];
-        std::vector<Value*> rtn;
+    // Transfer function: OUT[Ins] from IN[Ins].
+    static DenseMap<Value*, BitVector> transferFunc(Instruction* Ins, PointState ps,
+                                                    std::vector<Value*> abstractObjects,
+                                                    DominatorTree& DT, Function& F) {
+        DenseMap<Value*, BitVector> outMap = ps.in;
 
-        for (unsigned i = 0; i < bv.size(); ++i) {
-            if (!bv.test(i)) continue;
-            rtn.push_back(abstractObjects[i]);
-        }
-        return rtn;
-    }   
-
-  static DenseMap<Value*, BitVector> transferFunc(Instruction* Ins, PointState ps, std::vector<Value*> abstractObjects, DominatorTree& DT, Function& F) {
-    DenseMap<Value*, BitVector> outMap = ps.in;
-    if (auto* Load = dyn_cast<LoadInst>(Ins)) {
-        if (Load->getType()->isPointerTy()) {
-            // generates a points to relationship between the Value of the load and the load's getPointerOperand
-            // union the points to sets of the Value and the pointerOperand
-
-            Value* pointerOperand = Load->getPointerOperand();
-            auto it2 = std::find(abstractObjects.begin(), abstractObjects.end(), pointerOperand);
-
-            // if loading from a non abstract object
-            if (it2 == abstractObjects.end() && *it2 != pointerOperand) {
-                std::vector<Value*> pointerTargets = getPointsToValue(outMap, pointerOperand, abstractObjects);
-                if (pointerTargets.size() == 1) {  //make a test case for this
-                    pointerOperand = pointerTargets[0];
-                }
-            }
-
-            // handles assignments
-            BitVector bv = outMap[Load];
-            BitVector ptrBv = outMap[pointerOperand];
-
-            std::vector<BitVector> unionParams;
-            unionParams.push_back(bv);
-            unionParams.push_back(ptrBv);
-            BitVector unionSet = meetUnion(unionParams);
-            outMap[Load] = unionSet;
-        }
-            
-    }
-    // Stores of a pointer value
-    else if (auto* Store = dyn_cast<StoreInst>(Ins)) {
-        if (Store->getValueOperand()->getType()->isPointerTy()) {
-            // generate a points to relationship between getPointerOperand -> getValueOperand
-            // outs() << "store ins: " << *Store << "\n";
-
-            Value* aLoc = Store->getValueOperand(); 
-            auto it = std::find(abstractObjects.begin(), abstractObjects.end(), aLoc);
-            Value* pointerOperand = Store->getPointerOperand();
-            auto it2 = std::find(abstractObjects.begin(), abstractObjects.end(), pointerOperand);
-
-            // handles instructions in the form *c = a;
-            // if the store target is not an abstract location, need to find the abstract location that 
-            // the store target points to
-            if (it2 == abstractObjects.end() && *it2 != pointerOperand) {
-                if (auto* Load = dyn_cast<LoadInst>(pointerOperand)) {
-                    if (Load->getType()->isPointerTy()) {
-                        // need to get the value that c points to in order to assign it
-                        std::vector<Value*> pointerTargets = getPointsToValue(outMap, Load, abstractObjects);
-                        if (pointerTargets.size() == 1) {  //make a test case for this
-                            pointerOperand = pointerTargets[0];
-                        }
+        if (auto* Load = dyn_cast<LoadInst>(Ins)) {
+            if (Load->getType()->isPointerTy()) {
+                Value* pointerOperand = Load->getPointerOperand();
+                auto it2 = std::find(abstractObjects.begin(), abstractObjects.end(), pointerOperand);
+                if (it2 == abstractObjects.end()) {
+                    std::vector<Value*> pointerTargets = getPointsToValue(outMap, pointerOperand, abstractObjects);
+                    if (pointerTargets.size() == 1) {
+                        pointerOperand = pointerTargets[0];
                     }
                 }
-            }
-          
-            // gen set:
-            BitVector genSet(abstractObjects.size(), false);  
-            if (it != abstractObjects.end() && *it == aLoc) {
-                genSet.set(static_cast<unsigned>(it - abstractObjects.begin()));
-            } else {
-                // handles assignments
-                BitVector bv = outMap[Store->getValueOperand()];
+                BitVector bv = outMap[Load];
                 BitVector ptrBv = outMap[pointerOperand];
-
                 std::vector<BitVector> unionParams;
                 unionParams.push_back(bv);
                 unionParams.push_back(ptrBv);
-                BitVector unionSet = meetUnion(unionParams);
-                genSet = unionSet;
+                outMap[Load] = meetUnion(unionParams);
             }
+        }
+        else if (auto* Store = dyn_cast<StoreInst>(Ins)) {
+            if (Store->getValueOperand()->getType()->isPointerTy()) {
+                Value* valueOp = Store->getValueOperand();
+                Value* pointerOp = Store->getPointerOperand();
+                BasicBlock* exitBlock = &F.back();
 
+                std::vector<Value*> targets;
+                auto it2 = std::find(abstractObjects.begin(), abstractObjects.end(), pointerOp);
+                if (it2 != abstractObjects.end()) {
+                    targets.push_back(pointerOp);
+                } else if (auto* AddrLoad = dyn_cast<LoadInst>(pointerOp)) {
+                    if (AddrLoad->getType()->isPointerTy()) {
+                        targets = getPointsToValue(outMap, AddrLoad, abstractObjects);
+                    }
+                }
 
-            // kill set:
-            BitVector killSet(abstractObjects.size(), false);
-            // strong updates = singleton, nonconditional updates
-            BasicBlock* exitBlock = &F.back();
-            // check singletons:
-            if (outMap[pointerOperand].count() <= 1) {
-                // check conditional updates:
-                if (DT.dominates(Ins->getParent(), exitBlock)) {
-                    killSet = outMap[pointerOperand];
+                BitVector newVal(abstractObjects.size(), false);
+                auto it = std::find(abstractObjects.begin(), abstractObjects.end(), valueOp);
+                if (it != abstractObjects.end()) {
+                    newVal.set(static_cast<unsigned>(it - abstractObjects.begin()));
+                } else {
+                    auto vIt = outMap.find(valueOp);
+                    if (vIt != outMap.end() && vIt->second.size() == abstractObjects.size()) {
+                        newVal = vIt->second;
+                    }
+                }
+
+                bool isStrong = (targets.size() == 1)
+                                && DT.dominates(Ins->getParent(), exitBlock);
+
+                for (Value* target : targets) {
+                    if (isStrong) {
+                        outMap[target] = newVal;
+                    } else {
+                        BitVector oldVal = outMap[target];
+                        if (oldVal.size() != abstractObjects.size()) {
+                            oldVal = BitVector(abstractObjects.size(), false);
+                        }
+                        std::vector<BitVector> u = {oldVal, newVal};
+                        outMap[target] = meetUnion(u);
+                    }
                 }
             }
-
-            if (killSet.size() != 0) {
-                outMap[pointerOperand] = bitVectorSub(genSet, killSet);
-            } else {
-                outMap[pointerOperand] = genSet;
-            }
-            
         }
-            
+
+        return outMap;
     }
-    return outMap;
-  }
 
-  PreservedAnalyses run(Function& F, FunctionAnalysisManager& AM) {
-    DominatorTree& DT = AM.getResult<DominatorTreeAnalysis>(F);
+    PreservedAnalyses run(Function& F, FunctionAnalysisManager& AM) {
+        DominatorTree& DT = AM.getResult<DominatorTreeAnalysis>(F);
 
-    // Dataflow objects are maps from pointers to powersets of abstract objects
-    // The types of abstract objects are defined in the Anderson paper
-    std::vector<Value*> abstractObjects;
-    for (auto& BB : F) {
-      for (auto& I : BB) {
-        // stack allocations
-        if (auto* Alloca = dyn_cast<AllocaInst>(&I)) {
-            abstractObjects.push_back(Alloca); 
+        std::vector<Value*> abstractObjects = collectAbstractObjects(F);
+
+        DenseMap<const Instruction*, PointState> st;
+        std::vector<Instruction*> order;
+        std::vector<BasicBlock*> bbs;
+        bbs.push_back(&F.getEntryBlock());
+        for (auto& I : *bbs[0]) {
+            order.push_back(&I);
         }
-        // Heap allocation (ex: call to malloc)
-        if (auto* Call = dyn_cast<CallInst>(&I)) {
-            if (Call->getType()->isPointerTy()) 
-                abstractObjects.push_back(Call);
-        }
-      }
-    }
-
-    // Include global variables as abstract locations (as per Anderson's paper)
-    // Reasoning: pointers can point to other pointers
-    Module* M = F.getParent();
-    for (auto& G : M->globals()) {
-        if (G.getValueType()->isPointerTy()) {
-            abstractObjects.push_back(&G);
-        } 
-    }
-
-    // outs() << "abstract objects: \n";
-    // for (int i = 0; i < abstractObjects.size(); i ++) {
-    //     outs() << *(abstractObjects[i]) << "\n";
-    // }
-
-
-    // =============================================================================
-    // ITERATIVE ALG
-    // =============================================================================
-    DenseMap<const Instruction*, PointState> st;
-
-    // Build BFS traversal order starting from entry block
-    std::vector<Instruction*> order;
-    std::vector<BasicBlock*> bbs;
-    bbs.push_back(&F.getEntryBlock());
-    for (auto& I : *bbs[0]) {       // instructions from first block
-        order.push_back(&I);
-    }
-    for (size_t i = 0; i < bbs.size(); ++i) {
-      for (BasicBlock* succ : successors(bbs[i])) {
-        if (std::find(bbs.begin(), bbs.end(), succ) == bbs.end()) {
-            bbs.push_back(succ);
-            for (auto& I : *succ) {     // all other instructions
-                order.push_back(&I);
-            }
-        } 
-      }
-    }
-
-    // -----------------------------------------------------------------------------
-    // WORKLIST ALGORITHM
-    // 
-    // The worklist initially contains all instructions in the program. 
-    // Upon each iteration, compare to see if the out set of the current instruction 
-    // has changed. If is has, add all of the instruction's successors to the worklist.
-    // If the instruction's out set has not changed, continue iterating through the 
-    // worklist. 
-    // 
-    // Upon each iteration, calculate the in set of an instruction. 
-    //      IN[Ins] = union of OUT[pred] for all predecessor instructions
-    // Then, utilize the transfer funciton to find the new out set. The transfer
-    // function handles the generating, killing, and propogation of points-to 
-    // relationships. 
-    // -----------------------------------------------------------------------------
-    std::vector<Instruction*> worklist;
-    worklist = order;
-    for (int i = 0; i < worklist.size(); i ++) {
-        Instruction* Ins = worklist[i];
-        PointState ps = st[Ins];
-
-        ps.in = getInSet(Ins, st, abstractObjects.size());
-        
-        DenseMap<Value*, BitVector> newOut = transferFunc(Ins, ps, abstractObjects, DT, F);
-
-        if (ps.out != newOut) {    
-            ps.out = newOut;
-            std::vector<Instruction*> succInstructions = getSuccessors(Ins, F);
-            for (int j = 0; j < succInstructions.size(); j ++) {
-                worklist.push_back(succInstructions[j]);
+        for (size_t i = 0; i < bbs.size(); ++i) {
+            for (BasicBlock* succ : successors(bbs[i])) {
+                if (std::find(bbs.begin(), bbs.end(), succ) == bbs.end()) {
+                    bbs.push_back(succ);
+                    for (auto& I : *succ) {
+                        order.push_back(&I);
+                    }
+                }
             }
         }
-        st[Ins] = ps;
-    }
 
+        auto t0 = std::chrono::high_resolution_clock::now();
 
-    // printing results:
-    outs() << "Per-program point point-to sets: \n";
-    for (int j = 0; j < order.size(); j ++) {
-        outs() << "Program Point: "<< *order[j] << " \n";
-        prettyPrintPointState(outs(), st[order[j]], abstractObjects);
+        std::vector<Instruction*> worklist;
+        worklist = order;
+        for (int i = 0; i < (int)worklist.size(); i++) {
+            Instruction* Ins = worklist[i];
+            PointState ps = st[Ins];
+            ps.in = getInSet(Ins, st, abstractObjects.size());
+            DenseMap<Value*, BitVector> newOut = transferFunc(Ins, ps, abstractObjects, DT, F);
+            if (ps.out != newOut) {
+                ps.out = newOut;
+                std::vector<Instruction*> succInstructions = getSuccessors(Ins, F);
+                for (int j = 0; j < (int)succInstructions.size(); j++) {
+                    worklist.push_back(succInstructions[j]);
+                }
+            }
+            st[Ins] = ps;
+        }
+
+        auto t1 = std::chrono::high_resolution_clock::now();
+        double analysisTimeMs = std::chrono::duration<double, std::milli>(t1 - t0).count();
+
+        outs() << "Per-program point point-to sets [flow-sensitive]: \n";
+        for (int j = 0; j < (int)order.size(); j++) {
+            outs() << "Program Point: " << *order[j] << " \n";
+            prettyPrintPointState(outs(), st[order[j]], abstractObjects);
+        }
+
+        reportMetricsPerPoint(outs(), F, order, st, abstractObjects.size(),
+                              worklist.size(), analysisTimeMs, "flow-sensitive");
+
+        return PreservedAnalyses::all();
     }
-    return PreservedAnalyses::all();
-  }
 };
 
-} // end namespace 
+
+// =============================================================================
+// Pass 2: flow-insensitive Andersen baseline
+//
+// One global points-to map per function. All stores are weak updates (merge).
+// We iterate over the instruction list applying inclusion constraints until
+// the map stops changing. This is the textbook Andersen formulation reduced
+// to a fixed-point loop.
+// =============================================================================
+struct FlowInsensitivePointsTo : PassInfoMixin<FlowInsensitivePointsTo> {
+
+    // Apply one pass over all instructions, accumulating into ptsMap.
+    // Returns true iff the map changed during this pass.
+    static bool processOnce(Function& F,
+                            DenseMap<Value*, BitVector>& ptsMap,
+                            const std::vector<Value*>& abstractObjects) {
+        bool changed = false;
+        const unsigned N = abstractObjects.size();
+
+        auto getPts = [&](Value* v) -> BitVector {
+            auto it = ptsMap.find(v);
+            if (it == ptsMap.end() || it->second.size() != N) {
+                return BitVector(N, false);
+            }
+            return it->second;
+        };
+        auto setPts = [&](Value* v, const BitVector& bv) {
+            auto it = ptsMap.find(v);
+            if (it == ptsMap.end()) {
+                ptsMap[v] = bv;
+                if (bv.count() > 0) changed = true;
+            } else {
+                BitVector merged = it->second;
+                BitVector before = merged;
+                merged |= bv;
+                if (merged != before) {
+                    it->second = merged;
+                    changed = true;
+                }
+            }
+        };
+
+        for (auto& BB : F) {
+            for (auto& I : BB) {
+                if (auto* Load = dyn_cast<LoadInst>(&I)) {
+                    if (!Load->getType()->isPointerTy()) continue;
+                    // p = *q  =>  for each o in pts(q): pts(p) ⊇ pts(o)
+                    Value* q = Load->getPointerOperand();
+                    auto qIsAbstract = std::find(abstractObjects.begin(),
+                                                 abstractObjects.end(), q);
+                    BitVector ptsQ;
+                    if (qIsAbstract != abstractObjects.end()) {
+                        // q itself is the abstract location
+                        ptsQ = BitVector(N, false);
+                        ptsQ.set(static_cast<unsigned>(qIsAbstract - abstractObjects.begin()));
+                    } else {
+                        ptsQ = getPts(q);
+                    }
+                    // For each o in ptsQ, merge pts(o) into pts(p).
+                    BitVector accum(N, false);
+                    for (unsigned i = 0; i < ptsQ.size(); ++i) {
+                        if (!ptsQ.test(i)) continue;
+                        BitVector ptsO = getPts(abstractObjects[i]);
+                        accum |= ptsO;
+                    }
+                    setPts(Load, accum);
+                }
+                else if (auto* Store = dyn_cast<StoreInst>(&I)) {
+                    if (!Store->getValueOperand()->getType()->isPointerTy()) continue;
+                    Value* v = Store->getValueOperand();
+                    Value* p = Store->getPointerOperand();
+
+                    // Compute pts(v).
+                    BitVector ptsV(N, false);
+                    auto vIsAbstract = std::find(abstractObjects.begin(),
+                                                 abstractObjects.end(), v);
+                    if (vIsAbstract != abstractObjects.end()) {
+                        ptsV.set(static_cast<unsigned>(vIsAbstract - abstractObjects.begin()));
+                    } else {
+                        ptsV = getPts(v);
+                    }
+
+                    // Determine target set.
+                    auto pIsAbstract = std::find(abstractObjects.begin(),
+                                                 abstractObjects.end(), p);
+                    if (pIsAbstract != abstractObjects.end()) {
+                        // store v, ptr <abstract>: pts(p) ⊇ pts(v)
+                        setPts(p, ptsV);
+                    } else {
+                        // *p = v : for each o in pts(p): pts(o) ⊇ pts(v)
+                        BitVector ptsP = getPts(p);
+                        for (unsigned i = 0; i < ptsP.size(); ++i) {
+                            if (!ptsP.test(i)) continue;
+                            setPts(abstractObjects[i], ptsV);
+                        }
+                    }
+                }
+                // No GEP / address-of explicit instruction at this IR level;
+                // address-of is implicit via abstract objects (alloca/global)
+                // appearing as store value operands, already handled above.
+            }
+        }
+        return changed;
+    }
+
+    PreservedAnalyses run(Function& F, FunctionAnalysisManager& /*AM*/) {
+        std::vector<Value*> abstractObjects = collectAbstractObjects(F);
+
+        // Count program points up front for parity with flow-sensitive metrics.
+        std::size_t numProgramPoints = 0;
+        for (auto& BB : F) numProgramPoints += BB.size();
+
+        DenseMap<Value*, BitVector> ptsMap;
+
+        auto t0 = std::chrono::high_resolution_clock::now();
+
+        std::size_t iterations = 0;
+        bool changed = true;
+        while (changed) {
+            iterations++;
+            changed = processOnce(F, ptsMap, abstractObjects);
+            // Safety net: cap iterations far above any realistic fixpoint.
+            if (iterations > 10000) break;
+        }
+
+        auto t1 = std::chrono::high_resolution_clock::now();
+        double analysisTimeMs = std::chrono::duration<double, std::milli>(t1 - t0).count();
+
+        outs() << "Function-level point-to map [flow-insensitive]: \n";
+        outs() << "Function: " << F.getName() << "\n";
+        prettyPrintMap(outs(), ptsMap, abstractObjects);
+
+        reportMetricsSingle(outs(), F, ptsMap, abstractObjects.size(),
+                            numProgramPoints, iterations, analysisTimeMs,
+                            "flow-insensitive");
+
+        return PreservedAnalyses::all();
+    }
+};
+
+} // end namespace
 
 
 // =============================================================================
-// Pass Registration: registers all four passes as a single LLVM plugin
+// Pass Registration
+// Usage:
+//   opt -load-pass-plugin=unifiedpass.so \
+//       -passes='flow-sensitive-points-to-analysis'   input.bc
+//   opt -load-pass-plugin=unifiedpass.so \
+//       -passes='flow-insensitive-points-to-analysis' input.bc
 // =============================================================================
-// Usage: opt -load-pass-plugin=unifiedpass.so -passes='<passname>' input.bc
-// Where <passname> is: flow-sensitive-points-to-analysis
 extern "C" LLVM_ATTRIBUTE_WEAK PassPluginLibraryInfo llvmGetPassPluginInfo() {
-  return {LLVM_PLUGIN_API_VERSION, "UnifiedPass", "v1.0", [](PassBuilder& PB) {
-            PB.registerPipelineParsingCallback(
-                [](StringRef Name, FunctionPassManager& FPM,
-                   ArrayRef<PassBuilder::PipelineElement>) -> bool {
-                  if (Name == "flow-sensitive-points-to-analysis") {
-                    FPM.addPass(PointsTo());
-                    return true;
-                  }
-                  return false;
-                });
-          }};
+    return {LLVM_PLUGIN_API_VERSION, "UnifiedPass", "v1.0", [](PassBuilder& PB) {
+                PB.registerPipelineParsingCallback(
+                    [](StringRef Name, FunctionPassManager& FPM,
+                       ArrayRef<PassBuilder::PipelineElement>) -> bool {
+                        if (Name == "flow-sensitive-points-to-analysis") {
+                            FPM.addPass(FlowSensitivePointsTo());
+                            return true;
+                        }
+                        if (Name == "flow-insensitive-points-to-analysis") {
+                            FPM.addPass(FlowInsensitivePointsTo());
+                            return true;
+                        }
+                        return false;
+                    });
+            }};
 }

@@ -1,0 +1,116 @@
+Function-level point-to map [flow-insensitive]: 
+Function: make_node
+
+=== Evaluation Metrics [flow-insensitive] for function 'make_node' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.017 ms
+  program points analyzed            : 6
+  abstract objects                   : 3
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: push_front
+  g_tail: { call }
+  g_head: { call }
+
+=== Evaluation Metrics [flow-insensitive] for function 'push_front' ===
+  pointer variables tracked          : 2
+  avg points-to set size             : 1.000
+  #may-alias pairs                   : 1
+  #must-alias pairs                  : 1
+  analysis time                      : 0.023 ms
+  program points analyzed            : 11
+  abstract objects                   : 3
+  fixpoint iterations                : 3
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: push_back
+  g_tail: { call }
+  g_head: { call }
+
+=== Evaluation Metrics [flow-insensitive] for function 'push_back' ===
+  pointer variables tracked          : 2
+  avg points-to set size             : 1.000
+  #may-alias pairs                   : 1
+  #must-alias pairs                  : 1
+  analysis time                      : 0.011 ms
+  program points analyzed            : 13
+  abstract objects                   : 3
+  fixpoint iterations                : 3
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: pop_front
+  g_tail: {  }
+  g_head: {  }
+
+=== Evaluation Metrics [flow-insensitive] for function 'pop_front' ===
+  pointer variables tracked          : 2
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.006 ms
+  program points analyzed            : 19
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: find
+
+=== Evaluation Metrics [flow-insensitive] for function 'find' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.002 ms
+  program points analyzed            : 16
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: reverse
+  g_tail: {  }
+  g_head: {  }
+
+=== Evaluation Metrics [flow-insensitive] for function 'reverse' ===
+  pointer variables tracked          : 2
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.004 ms
+  program points analyzed            : 15
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: append_list
+  g_tail: {  }
+  g_head: {  }
+
+=== Evaluation Metrics [flow-insensitive] for function 'append_list' ===
+  pointer variables tracked          : 2
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.004 ms
+  program points analyzed            : 15
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: main
+  g_tail: {  }
+  g_head: {  }
+
+=== Evaluation Metrics [flow-insensitive] for function 'main' ===
+  pointer variables tracked          : 2
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.006 ms
+  program points analyzed            : 45
+  abstract objects                   : 7
+  fixpoint iterations                : 1
+============================================

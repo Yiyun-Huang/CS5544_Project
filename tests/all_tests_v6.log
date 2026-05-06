@@ -1,0 +1,2885 @@
+
+========================================================
+Benchmark: complex-pointer-types
+========================================================
+
+---- flow-sensitive ----
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %x = alloca i32, align 4 
+Program Point:   %y = alloca i32, align 4 
+Program Point:   store i32 10, ptr %x, align 4 
+Program Point:   store i32 20, ptr %y, align 4 
+Program Point:   store ptr %x, ptr @a, align 8 
+  a: { x }
+Program Point:   store ptr @b, ptr @c, align 8 
+  a: { x }
+  c: { b }
+Program Point:   %0 = load ptr, ptr @a, align 8 
+  a: { x }
+  c: { b }
+Program Point:   %1 = load ptr, ptr @c, align 8 
+  a: { x }
+  c: { b }
+Program Point:   store ptr %0, ptr %1, align 8 
+  a: { x }
+  c: { b }
+  b: { x }
+Program Point:   %2 = load ptr, ptr @c, align 8 
+  a: { x }
+  c: { b }
+  b: { x }
+Program Point:   %3 = load ptr, ptr %2, align 8 
+  a: { x }
+  c: { b }
+  b: { x }
+Program Point:   store ptr %3, ptr @e, align 8 
+  a: { x }
+  e: { x }
+  c: { b }
+  b: { x }
+Program Point:   store ptr @f, ptr @d, align 8 
+  d: { f }
+  a: { x }
+  e: { x }
+  c: { b }
+  b: { x }
+Program Point:   %4 = load ptr, ptr @d, align 8 
+  d: { f }
+  a: { x }
+  e: { x }
+  c: { b }
+  b: { x }
+Program Point:   store ptr %y, ptr %4, align 8 
+  f: { y }
+  d: { f }
+  a: { x }
+  e: { x }
+  c: { b }
+  b: { x }
+Program Point:   %5 = load i32, ptr %x, align 4 
+  f: { y }
+  d: { f }
+  a: { x }
+  e: { x }
+  c: { b }
+  b: { x }
+Program Point:   %tobool = icmp ne i32 %5, 0 
+  f: { y }
+  d: { f }
+  a: { x }
+  e: { x }
+  c: { b }
+  b: { x }
+Program Point:   br i1 %tobool, label %if.then, label %if.end 
+  f: { y }
+  d: { f }
+  a: { x }
+  e: { x }
+  c: { b }
+  b: { x }
+Program Point:   %6 = load ptr, ptr @c, align 8 
+  f: { y }
+  d: { f }
+  a: { x }
+  e: { x }
+  c: { b }
+  b: { x }
+Program Point:   %7 = load ptr, ptr %6, align 8 
+  f: { y }
+  d: { f }
+  a: { x }
+  e: { x }
+  c: { b }
+  b: { x }
+Program Point:   %8 = load ptr, ptr @d, align 8 
+  f: { y }
+  d: { f }
+  a: { x }
+  e: { x }
+  c: { b }
+  b: { x }
+Program Point:   store ptr %7, ptr %8, align 8 
+  f: { x; y }
+  d: { f }
+  a: { x }
+  e: { x }
+  c: { b }
+  b: { x }
+Program Point:   br label %if.end 
+  f: { x; y }
+  d: { f }
+  a: { x }
+  e: { x }
+  c: { b }
+  b: { x }
+Program Point:   %9 = load ptr, ptr @f, align 8 
+  f: { x; y }
+  d: { f }
+  a: { x }
+  e: { x }
+  c: { b }
+  b: { x }
+Program Point:   store ptr %9, ptr @g, align 8 
+  f: { x; y }
+  d: { f }
+  a: { x }
+  g: { x; y }
+  e: { x }
+  c: { b }
+  b: { x }
+Program Point:   ret i32 0 
+  f: { x; y }
+  d: { f }
+  a: { x }
+  g: { x; y }
+  e: { x }
+  c: { b }
+  b: { x }
+
+=== Evaluation Metrics [flow-sensitive] for function 'main' ===
+  pointer variables tracked at exit : 7
+  avg points-to set size at exit    : 1.286
+  #may-alias pairs   (any point)    : 10
+  #must-alias pairs  (any point)    : 3
+  analysis time                     : 3.301 ms
+  program points analyzed           : 26
+  abstract objects                  : 9
+  worklist iterations               : 48
+============================================
+
+---- flow-insensitive (baseline) ----
+Function-level point-to map [flow-insensitive]: 
+Function: main
+  e: { x }
+  a: { x }
+  g: { x; y }
+  f: { x; y }
+  c: { b }
+  d: { f }
+  b: { x }
+
+=== Evaluation Metrics [flow-insensitive] for function 'main' ===
+  pointer variables tracked          : 7
+  avg points-to set size             : 1.286
+  #may-alias pairs                   : 10
+  #must-alias pairs                  : 3
+  analysis time                      : 0.066 ms
+  program points analyzed            : 26
+  abstract objects                   : 9
+  fixpoint iterations                : 2
+============================================
+
+========================================================
+Benchmark: iterative-example
+========================================================
+
+---- flow-sensitive ----
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %call = call noalias ptr @malloc(i64 noundef 4) #2 
+Program Point:   store ptr %call, ptr @a, align 8 
+  a: { call }
+Program Point:   %call1 = call noalias ptr @malloc(i64 noundef 4) #2 
+  a: { call }
+Program Point:   store ptr %call1, ptr @b, align 8 
+  b: { call1 }
+  a: { call }
+Program Point:   %0 = load ptr, ptr @a, align 8 
+  b: { call1 }
+  a: { call }
+Program Point:   store i32 0, ptr %0, align 4 
+  b: { call1 }
+  a: { call }
+Program Point:   br label %while.cond 
+  b: { call1 }
+  a: { call }
+Program Point:   %1 = load ptr, ptr @a, align 8 
+  b: { call1; call2 }
+  a: { call }
+Program Point:   %2 = load i32, ptr %1, align 4 
+  b: { call1; call2 }
+  a: { call }
+Program Point:   %cmp = icmp slt i32 %2, 10 
+  b: { call1; call2 }
+  a: { call }
+Program Point:   br i1 %cmp, label %while.body, label %while.end 
+  b: { call1; call2 }
+  a: { call }
+Program Point:   %3 = load ptr, ptr @a, align 8 
+  b: { call1; call2 }
+  a: { call }
+Program Point:   %4 = load i32, ptr %3, align 4 
+  b: { call1; call2 }
+  a: { call }
+Program Point:   %add = add nsw i32 %4, 1 
+  b: { call1; call2 }
+  a: { call }
+Program Point:   %5 = load ptr, ptr @a, align 8 
+  b: { call1; call2 }
+  a: { call }
+Program Point:   store i32 %add, ptr %5, align 4 
+  b: { call1; call2 }
+  a: { call }
+Program Point:   %call2 = call noalias ptr @malloc(i64 noundef 4) #2 
+  b: { call1; call2 }
+  a: { call }
+Program Point:   store ptr %call2, ptr @b, align 8 
+  b: { call1; call2 }
+  a: { call }
+Program Point:   br label %while.cond, !llvm.loop !6 
+  b: { call1; call2 }
+  a: { call }
+Program Point:   %6 = load ptr, ptr @a, align 8 
+  b: { call1; call2 }
+  a: { call }
+Program Point:   %7 = load i32, ptr %6, align 4 
+  b: { call1; call2 }
+  a: { call }
+Program Point:   ret i32 %7 
+  b: { call1; call2 }
+  a: { call }
+
+=== Evaluation Metrics [flow-sensitive] for function 'main' ===
+  pointer variables tracked at exit : 2
+  avg points-to set size at exit    : 1.500
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 2.599 ms
+  program points analyzed           : 22
+  abstract objects                  : 5
+  worklist iterations               : 56
+============================================
+
+---- flow-insensitive (baseline) ----
+Function-level point-to map [flow-insensitive]: 
+Function: main
+  a: { call }
+  b: { call1; call2 }
+
+=== Evaluation Metrics [flow-insensitive] for function 'main' ===
+  pointer variables tracked          : 2
+  avg points-to set size             : 1.500
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.045 ms
+  program points analyzed            : 22
+  abstract objects                   : 5
+  fixpoint iterations                : 2
+============================================
+
+========================================================
+Benchmark: test
+========================================================
+
+---- flow-sensitive ----
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %call = call noalias ptr @malloc(i64 noundef 20) #2 
+Program Point:   store ptr %call, ptr @a, align 8 
+  a: { call }
+Program Point:   %call1 = call noalias ptr @malloc(i64 noundef 20) #2 
+  a: { call }
+Program Point:   store ptr %call1, ptr @b, align 8 
+  b: { call1 }
+  a: { call }
+Program Point:   %0 = load ptr, ptr @b, align 8 
+  b: { call1 }
+  a: { call }
+Program Point:   store ptr %0, ptr @a, align 8 
+  b: { call1 }
+  a: { call1 }
+Program Point:   %call2 = call noalias ptr @malloc(i64 noundef 24) #2 
+  b: { call1 }
+  a: { call1 }
+Program Point:   store ptr %call2, ptr @a, align 8 
+  b: { call1 }
+  a: { call2 }
+Program Point:   %tobool = icmp ne i32 1, 0 
+  b: { call1 }
+  a: { call2 }
+Program Point:   br i1 %tobool, label %if.then, label %if.else 
+  b: { call1 }
+  a: { call2 }
+Program Point:   %1 = load ptr, ptr @b, align 8 
+  b: { call1 }
+  a: { call2 }
+Program Point:   store ptr %1, ptr @a, align 8 
+  b: { call1 }
+  a: { call1; call2 }
+Program Point:   br label %if.end 
+  b: { call1 }
+  a: { call1; call2 }
+Program Point:   %call3 = call noalias ptr @malloc(i64 noundef 16) #2 
+  b: { call1 }
+  a: { call2 }
+Program Point:   store ptr %call3, ptr @a, align 8 
+  b: { call1 }
+  a: { call2; call3 }
+Program Point:   br label %if.end 
+  b: { call1 }
+  a: { call2; call3 }
+Program Point:   %2 = load ptr, ptr @a, align 8 
+  b: { call1 }
+  a: { call1; call2; call3 }
+Program Point:   %3 = load i32, ptr %2, align 4 
+  b: { call1 }
+  a: { call1; call2; call3 }
+Program Point:   ret i32 %3 
+  b: { call1 }
+  a: { call1; call2; call3 }
+
+=== Evaluation Metrics [flow-sensitive] for function 'main' ===
+  pointer variables tracked at exit : 2
+  avg points-to set size at exit    : 2.000
+  #may-alias pairs   (any point)    : 1
+  #must-alias pairs  (any point)    : 1
+  analysis time                     : 1.183 ms
+  program points analyzed           : 19
+  abstract objects                  : 6
+  worklist iterations               : 37
+============================================
+
+---- flow-insensitive (baseline) ----
+Function-level point-to map [flow-insensitive]: 
+Function: main
+  a: { call; call1; call2; call3 }
+  b: { call1 }
+
+=== Evaluation Metrics [flow-insensitive] for function 'main' ===
+  pointer variables tracked          : 2
+  avg points-to set size             : 2.500
+  #may-alias pairs                   : 1
+  #must-alias pairs                  : 0
+  analysis time                      : 0.041 ms
+  program points analyzed            : 19
+  abstract objects                   : 6
+  fixpoint iterations                : 2
+============================================
+
+========================================================
+Benchmark: test2
+========================================================
+
+---- flow-sensitive ----
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %call = call noalias ptr @malloc(i64 noundef 4) #2 
+Program Point:   store ptr %call, ptr @p, align 8 
+  p: { call }
+Program Point:   %call1 = call noalias ptr @malloc(i64 noundef 4) #2 
+  p: { call }
+Program Point:   store ptr %call1, ptr @q, align 8 
+  p: { call }
+  q: { call1 }
+Program Point:   %0 = load ptr, ptr @q, align 8 
+  p: { call }
+  q: { call1 }
+Program Point:   store ptr %0, ptr @p, align 8 
+  p: { call1 }
+  q: { call1 }
+Program Point:   %call2 = call noalias ptr @malloc(i64 noundef 4) #2 
+  p: { call1 }
+  q: { call1 }
+Program Point:   store ptr %call2, ptr @r, align 8 
+  p: { call1 }
+  r: { call2 }
+  q: { call1 }
+Program Point:   %1 = load ptr, ptr @r, align 8 
+  p: { call1 }
+  r: { call2 }
+  q: { call1 }
+Program Point:   store ptr %1, ptr @q, align 8 
+  p: { call1 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   %tobool = icmp ne i32 undef, 0 
+  p: { call1 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   br i1 %tobool, label %if.then, label %if.else 
+  p: { call1 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   %2 = load ptr, ptr @r, align 8 
+  p: { call1 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   store ptr %2, ptr @p, align 8 
+  p: { call1; call2 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   br label %if.end 
+  p: { call1; call2 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   %call3 = call noalias ptr @malloc(i64 noundef 8) #2 
+  p: { call1 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   store ptr %call3, ptr @p, align 8 
+  p: { call1; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   br label %if.end 
+  p: { call1; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   %tobool4 = icmp ne i32 undef, 0 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   br i1 %tobool4, label %if.then5, label %if.end6 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   %3 = load ptr, ptr @q, align 8 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   store ptr %3, ptr @p, align 8 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   br label %if.end6 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   %4 = load ptr, ptr @p, align 8 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   %5 = load i32, ptr %4, align 4 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   %tobool7 = icmp ne i32 0, 0 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   br i1 %tobool7, label %if.then8, label %if.end9 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   %6 = load ptr, ptr @p, align 8 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   store ptr %6, ptr @r, align 8 
+  p: { call1; call2; call3 }
+  r: { call1; call2; call3 }
+  q: { call2 }
+Program Point:   br label %if.end9 
+  p: { call1; call2; call3 }
+  r: { call1; call2; call3 }
+  q: { call2 }
+Program Point:   %7 = load ptr, ptr @r, align 8 
+  p: { call1; call2; call3 }
+  r: { call1; call2; call3 }
+  q: { call2 }
+Program Point:   %8 = load i32, ptr %7, align 4 
+  p: { call1; call2; call3 }
+  r: { call1; call2; call3 }
+  q: { call2 }
+Program Point:   %add = add nsw i32 %8, %5 
+  p: { call1; call2; call3 }
+  r: { call1; call2; call3 }
+  q: { call2 }
+Program Point:   ret i32 %add 
+  p: { call1; call2; call3 }
+  r: { call1; call2; call3 }
+  q: { call2 }
+
+=== Evaluation Metrics [flow-sensitive] for function 'main' ===
+  pointer variables tracked at exit : 3
+  avg points-to set size at exit    : 2.333
+  #may-alias pairs   (any point)    : 3
+  #must-alias pairs  (any point)    : 2
+  analysis time                     : 4.077 ms
+  program points analyzed           : 34
+  abstract objects                  : 7
+  worklist iterations               : 69
+============================================
+
+---- flow-insensitive (baseline) ----
+Function-level point-to map [flow-insensitive]: 
+Function: main
+  r: { call; call1; call2; call3 }
+  p: { call; call1; call2; call3 }
+  q: { call; call1; call2; call3 }
+
+=== Evaluation Metrics [flow-insensitive] for function 'main' ===
+  pointer variables tracked          : 3
+  avg points-to set size             : 4.000
+  #may-alias pairs                   : 3
+  #must-alias pairs                  : 0
+  analysis time                      : 0.071 ms
+  program points analyzed            : 34
+  abstract objects                   : 7
+  fixpoint iterations                : 4
+============================================
+
+========================================================
+Benchmark: linked-list
+========================================================
+
+---- flow-sensitive ----
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %call = call noalias ptr @malloc(i64 noundef 16) #3 
+Program Point:   %val = getelementptr inbounds nuw %struct.Node, ptr %call, i32 0, i32 0 
+Program Point:   store i32 %v, ptr %val, align 8 
+Program Point:   %next = getelementptr inbounds nuw %struct.Node, ptr %call, i32 0, i32 1 
+Program Point:   store ptr null, ptr %next, align 8 
+Program Point:   ret ptr %call 
+
+=== Evaluation Metrics [flow-sensitive] for function 'make_node' ===
+  pointer variables tracked at exit : 0
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 0.046 ms
+  program points analyzed           : 6
+  abstract objects                  : 3
+  worklist iterations               : 6
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %call = call ptr @make_node(i32 noundef %v) 
+Program Point:   %0 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   %next = getelementptr inbounds nuw %struct.Node, ptr %call, i32 0, i32 1 
+  g_head: {  }
+Program Point:   store ptr %0, ptr %next, align 8 
+  g_head: {  }
+Program Point:   store ptr %call, ptr @g_head, align 8 
+  g_head: { call }
+Program Point:   %1 = load ptr, ptr @g_tail, align 8 
+  g_head: { call }
+  g_tail: {  }
+Program Point:   %cmp = icmp eq ptr %1, null 
+  g_head: { call }
+  g_tail: {  }
+Program Point:   br i1 %cmp, label %if.then, label %if.end 
+  g_head: { call }
+  g_tail: {  }
+Program Point:   store ptr %call, ptr @g_tail, align 8 
+  g_head: { call }
+  g_tail: { call }
+Program Point:   br label %if.end 
+  g_head: { call }
+  g_tail: { call }
+Program Point:   ret void 
+  g_head: { call }
+  g_tail: { call }
+
+=== Evaluation Metrics [flow-sensitive] for function 'push_front' ===
+  pointer variables tracked at exit : 2
+  avg points-to set size at exit    : 1.000
+  #may-alias pairs   (any point)    : 1
+  #must-alias pairs  (any point)    : 1
+  analysis time                     : 0.420 ms
+  program points analyzed           : 11
+  abstract objects                  : 3
+  worklist iterations               : 21
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %call = call ptr @make_node(i32 noundef %v) 
+Program Point:   %0 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   %cmp = icmp eq ptr %0, null 
+  g_head: {  }
+Program Point:   br i1 %cmp, label %if.then, label %if.else 
+  g_head: {  }
+Program Point:   store ptr %call, ptr @g_head, align 8 
+  g_head: { call }
+Program Point:   store ptr %call, ptr @g_tail, align 8 
+  g_head: { call }
+  g_tail: { call }
+Program Point:   br label %if.end 
+  g_head: { call }
+  g_tail: { call }
+Program Point:   %1 = load ptr, ptr @g_tail, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %next = getelementptr inbounds nuw %struct.Node, ptr %1, i32 0, i32 1 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   store ptr %call, ptr %next, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   store ptr %call, ptr @g_tail, align 8 
+  g_head: {  }
+  g_tail: { call }
+Program Point:   br label %if.end 
+  g_head: {  }
+  g_tail: { call }
+Program Point:   ret void 
+  g_head: { call }
+  g_tail: { call }
+
+=== Evaluation Metrics [flow-sensitive] for function 'push_back' ===
+  pointer variables tracked at exit : 2
+  avg points-to set size at exit    : 1.000
+  #may-alias pairs   (any point)    : 1
+  #must-alias pairs  (any point)    : 1
+  analysis time                     : 0.473 ms
+  program points analyzed           : 13
+  abstract objects                  : 3
+  worklist iterations               : 25
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %0 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   %cmp = icmp eq ptr %0, null 
+  g_head: {  }
+Program Point:   br i1 %cmp, label %if.then, label %if.end 
+  g_head: {  }
+Program Point:   br label %return 
+  g_head: {  }
+Program Point:   %1 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   %2 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   %next = getelementptr inbounds nuw %struct.Node, ptr %2, i32 0, i32 1 
+  g_head: {  }
+Program Point:   %3 = load ptr, ptr %next, align 8 
+  g_head: {  }
+  next: {  }
+Program Point:   store ptr %3, ptr @g_head, align 8 
+  g_head: {  }
+  next: {  }
+Program Point:   %4 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+  next: {  }
+Program Point:   %cmp1 = icmp eq ptr %4, null 
+  g_head: {  }
+  next: {  }
+Program Point:   br i1 %cmp1, label %if.then2, label %if.end3 
+  g_head: {  }
+  next: {  }
+Program Point:   %retval.0 = phi ptr [ null, %if.then ], [ %1, %if.end3 ] 
+  g_head: {  }
+  next: {  }
+  g_tail: {  }
+Program Point:   ret ptr %retval.0 
+  g_head: {  }
+  next: {  }
+  g_tail: {  }
+Program Point:   store ptr null, ptr @g_tail, align 8 
+  g_head: {  }
+  next: {  }
+  g_tail: {  }
+Program Point:   br label %if.end3 
+  g_head: {  }
+  next: {  }
+  g_tail: {  }
+Program Point:   %next4 = getelementptr inbounds nuw %struct.Node, ptr %1, i32 0, i32 1 
+  g_head: {  }
+  next: {  }
+  g_tail: {  }
+Program Point:   store ptr null, ptr %next4, align 8 
+  g_head: {  }
+  next: {  }
+  g_tail: {  }
+Program Point:   br label %return 
+  g_head: {  }
+  next: {  }
+  g_tail: {  }
+
+=== Evaluation Metrics [flow-sensitive] for function 'pop_front' ===
+  pointer variables tracked at exit : 3
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 1.412 ms
+  program points analyzed           : 19
+  abstract objects                  : 2
+  worklist iterations               : 40
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %0 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   br label %while.cond 
+  g_head: {  }
+Program Point:   %cur.0 = phi ptr [ %0, %entry ], [ %2, %if.end ] 
+  next: {  }
+  g_head: {  }
+Program Point:   %cmp = icmp ne ptr %cur.0, null 
+  next: {  }
+  g_head: {  }
+Program Point:   br i1 %cmp, label %while.body, label %while.end 
+  next: {  }
+  g_head: {  }
+Program Point:   %val = getelementptr inbounds nuw %struct.Node, ptr %cur.0, i32 0, i32 0 
+  next: {  }
+  g_head: {  }
+Program Point:   %1 = load i32, ptr %val, align 8 
+  next: {  }
+  g_head: {  }
+Program Point:   %cmp1 = icmp eq i32 %1, %v 
+  next: {  }
+  g_head: {  }
+Program Point:   br i1 %cmp1, label %if.then, label %if.end 
+  next: {  }
+  g_head: {  }
+Program Point:   br label %return 
+  next: {  }
+  g_head: {  }
+Program Point:   br label %return 
+  next: {  }
+  g_head: {  }
+Program Point:   %next = getelementptr inbounds nuw %struct.Node, ptr %cur.0, i32 0, i32 1 
+  next: {  }
+  g_head: {  }
+Program Point:   %2 = load ptr, ptr %next, align 8 
+  next: {  }
+  g_head: {  }
+Program Point:   br label %while.cond, !llvm.loop !6 
+  next: {  }
+  g_head: {  }
+Program Point:   %retval.0 = phi ptr [ %cur.0, %if.then ], [ null, %while.end ] 
+  next: {  }
+  g_head: {  }
+Program Point:   ret ptr %retval.0 
+  next: {  }
+  g_head: {  }
+
+=== Evaluation Metrics [flow-sensitive] for function 'find' ===
+  pointer variables tracked at exit : 2
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 1.227 ms
+  program points analyzed           : 16
+  abstract objects                  : 2
+  worklist iterations               : 46
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %0 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   br label %while.cond 
+  g_head: {  }
+Program Point:   %cur.0 = phi ptr [ %0, %entry ], [ %1, %while.body ] 
+  g_head: {  }
+  next1: {  }
+Program Point:   %prev.0 = phi ptr [ null, %entry ], [ %cur.0, %while.body ] 
+  g_head: {  }
+  next1: {  }
+Program Point:   %cmp = icmp ne ptr %cur.0, null 
+  g_head: {  }
+  next1: {  }
+Program Point:   br i1 %cmp, label %while.body, label %while.end 
+  g_head: {  }
+  next1: {  }
+Program Point:   %next1 = getelementptr inbounds nuw %struct.Node, ptr %cur.0, i32 0, i32 1 
+  g_head: {  }
+  next1: {  }
+Program Point:   %1 = load ptr, ptr %next1, align 8 
+  g_head: {  }
+  next1: {  }
+Program Point:   %next2 = getelementptr inbounds nuw %struct.Node, ptr %cur.0, i32 0, i32 1 
+  g_head: {  }
+  next1: {  }
+Program Point:   store ptr %prev.0, ptr %next2, align 8 
+  g_head: {  }
+  next1: {  }
+Program Point:   br label %while.cond, !llvm.loop !6 
+  g_head: {  }
+  next1: {  }
+Program Point:   %2 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+  next1: {  }
+Program Point:   store ptr %2, ptr @g_tail, align 8 
+  g_head: {  }
+  next1: {  }
+  g_tail: {  }
+Program Point:   store ptr %prev.0, ptr @g_head, align 8 
+  g_head: {  }
+  next1: {  }
+  g_tail: {  }
+Program Point:   ret void 
+  g_head: {  }
+  next1: {  }
+  g_tail: {  }
+
+=== Evaluation Metrics [flow-sensitive] for function 'reverse' ===
+  pointer variables tracked at exit : 3
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 0.959 ms
+  program points analyzed           : 15
+  abstract objects                  : 2
+  worklist iterations               : 39
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %cmp = icmp eq ptr %other_head, null 
+Program Point:   br i1 %cmp, label %if.then, label %if.end 
+Program Point:   br label %if.end3 
+Program Point:   %0 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   %cmp1 = icmp eq ptr %0, null 
+  g_head: {  }
+Program Point:   br i1 %cmp1, label %if.then2, label %if.else 
+  g_head: {  }
+Program Point:   ret void 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   store ptr %other_head, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   store ptr %other_tail, ptr @g_tail, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   br label %if.end3 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %1 = load ptr, ptr @g_tail, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %next = getelementptr inbounds nuw %struct.Node, ptr %1, i32 0, i32 1 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   store ptr %other_head, ptr %next, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   store ptr %other_tail, ptr @g_tail, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   br label %if.end3 
+  g_head: {  }
+  g_tail: {  }
+
+=== Evaluation Metrics [flow-sensitive] for function 'append_list' ===
+  pointer variables tracked at exit : 2
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 0.434 ms
+  program points analyzed           : 15
+  abstract objects                  : 2
+  worklist iterations               : 27
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   store ptr null, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   store ptr null, ptr @g_tail, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   call void @push_back(i32 noundef 10) 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   call void @push_back(i32 noundef 20) 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   call void @push_back(i32 noundef 30) 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   call void @push_front(i32 noundef 5) 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %call = call ptr @find(i32 noundef 20) 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %cmp = icmp ne ptr %call, null 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   br i1 %cmp, label %if.then, label %if.end 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %val = getelementptr inbounds nuw %struct.Node, ptr %call, i32 0, i32 0 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %0 = load i32, ptr %val, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   br label %if.end 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %found_val.0 = phi i32 [ %0, %if.then ], [ 0, %entry ] 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %call1 = call ptr @make_node(i32 noundef 100) 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %call2 = call ptr @make_node(i32 noundef 200) 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %call3 = call ptr @make_node(i32 noundef 300) 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %next = getelementptr inbounds nuw %struct.Node, ptr %call1, i32 0, i32 1 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   store ptr %call2, ptr %next, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %next4 = getelementptr inbounds nuw %struct.Node, ptr %call2, i32 0, i32 1 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   store ptr %call3, ptr %next4, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   call void @append_list(ptr noundef %call1, ptr noundef %call3) 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   call void @reverse() 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %1 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   br label %while.cond 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %sum.0 = phi i32 [ 0, %if.end ], [ %add, %while.body ] 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %cur.0 = phi ptr [ %1, %if.end ], [ %3, %while.body ] 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %cmp5 = icmp ne ptr %cur.0, null 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   br i1 %cmp5, label %while.body, label %while.end 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %val6 = getelementptr inbounds nuw %struct.Node, ptr %cur.0, i32 0, i32 0 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %2 = load i32, ptr %val6, align 8 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %add = add nsw i32 %sum.0, %2 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %next7 = getelementptr inbounds nuw %struct.Node, ptr %cur.0, i32 0, i32 1 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %3 = load ptr, ptr %next7, align 8 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   br label %while.cond, !llvm.loop !6 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %call8 = call ptr @pop_front() 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %cmp9 = icmp ne ptr %call8, null 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   br i1 %cmp9, label %if.then10, label %if.end12 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %val11 = getelementptr inbounds nuw %struct.Node, ptr %call8, i32 0, i32 0 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %4 = load i32, ptr %val11, align 8 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   call void @free(ptr noundef %call8) #3 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   br label %if.end12 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %popped_val.0 = phi i32 [ %4, %if.then10 ], [ 0, %while.end ] 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %add13 = add nsw i32 %sum.0, %found_val.0 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %add14 = add nsw i32 %add13, %popped_val.0 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   ret i32 %add14 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+
+=== Evaluation Metrics [flow-sensitive] for function 'main' ===
+  pointer variables tracked at exit : 3
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 8.163 ms
+  program points analyzed           : 45
+  abstract objects                  : 7
+  worklist iterations               : 112
+============================================
+
+---- flow-insensitive (baseline) ----
+Function-level point-to map [flow-insensitive]: 
+Function: make_node
+
+=== Evaluation Metrics [flow-insensitive] for function 'make_node' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.017 ms
+  program points analyzed            : 6
+  abstract objects                   : 3
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: push_front
+  g_tail: { call }
+  g_head: { call }
+
+=== Evaluation Metrics [flow-insensitive] for function 'push_front' ===
+  pointer variables tracked          : 2
+  avg points-to set size             : 1.000
+  #may-alias pairs                   : 1
+  #must-alias pairs                  : 1
+  analysis time                      : 0.023 ms
+  program points analyzed            : 11
+  abstract objects                   : 3
+  fixpoint iterations                : 3
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: push_back
+  g_tail: { call }
+  g_head: { call }
+
+=== Evaluation Metrics [flow-insensitive] for function 'push_back' ===
+  pointer variables tracked          : 2
+  avg points-to set size             : 1.000
+  #may-alias pairs                   : 1
+  #must-alias pairs                  : 1
+  analysis time                      : 0.011 ms
+  program points analyzed            : 13
+  abstract objects                   : 3
+  fixpoint iterations                : 3
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: pop_front
+  g_tail: {  }
+  g_head: {  }
+
+=== Evaluation Metrics [flow-insensitive] for function 'pop_front' ===
+  pointer variables tracked          : 2
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.006 ms
+  program points analyzed            : 19
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: find
+
+=== Evaluation Metrics [flow-insensitive] for function 'find' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.002 ms
+  program points analyzed            : 16
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: reverse
+  g_tail: {  }
+  g_head: {  }
+
+=== Evaluation Metrics [flow-insensitive] for function 'reverse' ===
+  pointer variables tracked          : 2
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.004 ms
+  program points analyzed            : 15
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: append_list
+  g_tail: {  }
+  g_head: {  }
+
+=== Evaluation Metrics [flow-insensitive] for function 'append_list' ===
+  pointer variables tracked          : 2
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.004 ms
+  program points analyzed            : 15
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: main
+  g_tail: {  }
+  g_head: {  }
+
+=== Evaluation Metrics [flow-insensitive] for function 'main' ===
+  pointer variables tracked          : 2
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.006 ms
+  program points analyzed            : 45
+  abstract objects                   : 7
+  fixpoint iterations                : 1
+============================================
+
+========================================================
+Benchmark: tree-ops
+========================================================
+
+---- flow-sensitive ----
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %call = call noalias ptr @malloc(i64 noundef 32) #3 
+Program Point:   %key = getelementptr inbounds nuw %struct.Tree, ptr %call, i32 0, i32 0 
+Program Point:   store i32 %k, ptr %key, align 8 
+Program Point:   %left = getelementptr inbounds nuw %struct.Tree, ptr %call, i32 0, i32 1 
+Program Point:   store ptr null, ptr %left, align 8 
+Program Point:   %right = getelementptr inbounds nuw %struct.Tree, ptr %call, i32 0, i32 2 
+Program Point:   store ptr null, ptr %right, align 8 
+Program Point:   %parent = getelementptr inbounds nuw %struct.Tree, ptr %call, i32 0, i32 3 
+Program Point:   store ptr null, ptr %parent, align 8 
+Program Point:   ret ptr %call 
+
+=== Evaluation Metrics [flow-sensitive] for function 'make_tree_node' ===
+  pointer variables tracked at exit : 0
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 0.055 ms
+  program points analyzed           : 10
+  abstract objects                  : 2
+  worklist iterations               : 10
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %call = call ptr @make_tree_node(i32 noundef %k) 
+Program Point:   %0 = load ptr, ptr @g_root, align 8 
+  g_root: {  }
+Program Point:   %cmp = icmp eq ptr %0, null 
+  g_root: {  }
+Program Point:   br i1 %cmp, label %if.then, label %if.end 
+  g_root: {  }
+Program Point:   store ptr %call, ptr @g_root, align 8 
+  g_root: { call }
+Program Point:   br label %if.end12 
+  g_root: { call }
+Program Point:   %1 = load ptr, ptr @g_root, align 8 
+  g_root: {  }
+Program Point:   br label %while.cond 
+  g_root: {  }
+Program Point:   ret void 
+  left: {  }
+  g_root: { call }
+  right: {  }
+Program Point:   %cur.0 = phi ptr [ %1, %if.end ], [ %cur.1, %if.end4 ] 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   %parent.0 = phi ptr [ null, %if.end ], [ %cur.0, %if.end4 ] 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   %cmp1 = icmp ne ptr %cur.0, null 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   br i1 %cmp1, label %while.body, label %while.end 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   %key = getelementptr inbounds nuw %struct.Tree, ptr %cur.0, i32 0, i32 0 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   %2 = load i32, ptr %key, align 8 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   %cmp2 = icmp slt i32 %k, %2 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   br i1 %cmp2, label %if.then3, label %if.else 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   %parent5 = getelementptr inbounds nuw %struct.Tree, ptr %call, i32 0, i32 3 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   store ptr %parent.0, ptr %parent5, align 8 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   %key6 = getelementptr inbounds nuw %struct.Tree, ptr %parent.0, i32 0, i32 0 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   %5 = load i32, ptr %key6, align 8 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   %cmp7 = icmp slt i32 %k, %5 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   br i1 %cmp7, label %if.then8, label %if.else10 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   %left = getelementptr inbounds nuw %struct.Tree, ptr %cur.0, i32 0, i32 1 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   %3 = load ptr, ptr %left, align 8 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   br label %if.end4 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   %right = getelementptr inbounds nuw %struct.Tree, ptr %cur.0, i32 0, i32 2 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   %4 = load ptr, ptr %right, align 8 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   br label %if.end4 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   %left9 = getelementptr inbounds nuw %struct.Tree, ptr %parent.0, i32 0, i32 1 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   store ptr %call, ptr %left9, align 8 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   br label %if.end12 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   %right11 = getelementptr inbounds nuw %struct.Tree, ptr %parent.0, i32 0, i32 2 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   store ptr %call, ptr %right11, align 8 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   br label %if.end12 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   %cur.1 = phi ptr [ %3, %if.then3 ], [ %4, %if.else ] 
+  left: {  }
+  g_root: {  }
+  right: {  }
+Program Point:   br label %while.cond, !llvm.loop !6 
+  left: {  }
+  g_root: {  }
+  right: {  }
+
+=== Evaluation Metrics [flow-sensitive] for function 'tree_insert' ===
+  pointer variables tracked at exit : 3
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 6.932 ms
+  program points analyzed           : 37
+  abstract objects                  : 2
+  worklist iterations               : 105
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %0 = load ptr, ptr @g_root, align 8 
+  g_root: {  }
+Program Point:   br label %while.cond 
+  g_root: {  }
+Program Point:   %cur.0 = phi ptr [ %0, %entry ], [ %cur.1, %if.end5 ] 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   %cmp = icmp ne ptr %cur.0, null 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   br i1 %cmp, label %while.body, label %while.end 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   %key = getelementptr inbounds nuw %struct.Tree, ptr %cur.0, i32 0, i32 0 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   %1 = load i32, ptr %key, align 8 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   %cmp1 = icmp eq i32 %k, %1 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   br i1 %cmp1, label %if.then, label %if.end 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   br label %return 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   br label %return 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   %key2 = getelementptr inbounds nuw %struct.Tree, ptr %cur.0, i32 0, i32 0 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   %2 = load i32, ptr %key2, align 8 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   %cmp3 = icmp slt i32 %k, %2 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   br i1 %cmp3, label %if.then4, label %if.else 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   %retval.0 = phi ptr [ %cur.0, %if.then ], [ null, %while.end ] 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   ret ptr %retval.0 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   %left = getelementptr inbounds nuw %struct.Tree, ptr %cur.0, i32 0, i32 1 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   %3 = load ptr, ptr %left, align 8 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   br label %if.end5 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   %right = getelementptr inbounds nuw %struct.Tree, ptr %cur.0, i32 0, i32 2 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   %4 = load ptr, ptr %right, align 8 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   br label %if.end5 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   %cur.1 = phi ptr [ %3, %if.then4 ], [ %4, %if.else ] 
+  right: {  }
+  g_root: {  }
+  left: {  }
+Program Point:   br label %while.cond, !llvm.loop !6 
+  right: {  }
+  g_root: {  }
+  left: {  }
+
+=== Evaluation Metrics [flow-sensitive] for function 'tree_find' ===
+  pointer variables tracked at exit : 3
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 2.732 ms
+  program points analyzed           : 25
+  abstract objects                  : 1
+  worklist iterations               : 75
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %stack = alloca [64 x ptr], align 8 
+Program Point:   %0 = load ptr, ptr @g_root, align 8 
+  g_root: {  }
+Program Point:   %cmp = icmp eq ptr %0, null 
+  g_root: {  }
+Program Point:   br i1 %cmp, label %if.then, label %if.end 
+  g_root: {  }
+Program Point:   br label %return 
+  g_root: {  }
+Program Point:   %1 = load ptr, ptr @g_root, align 8 
+  g_root: {  }
+Program Point:   %arrayidx = getelementptr inbounds [64 x ptr], ptr %stack, i64 0, i64 0 
+  g_root: {  }
+Program Point:   store ptr %1, ptr %arrayidx, align 8 
+  g_root: {  }
+Program Point:   br label %while.cond 
+  g_root: {  }
+Program Point:   %retval.0 = phi i32 [ 0, %if.then ], [ %count.0, %while.end ] 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   ret i32 %retval.0 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %count.0 = phi i32 [ 0, %if.end ], [ %add, %if.end16 ] 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %top.0 = phi i32 [ 1, %if.end ], [ %top.2, %if.end16 ] 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %cmp1 = icmp sgt i32 %top.0, 0 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   br i1 %cmp1, label %while.body, label %while.end 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %sub = sub nsw i32 %top.0, 1 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %idxprom = sext i32 %sub to i64 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %arrayidx2 = getelementptr inbounds [64 x ptr], ptr %stack, i64 0, i64 %idxprom 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %2 = load ptr, ptr %arrayidx2, align 8 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %add = add nsw i32 %count.0, 1 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %left = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 1 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %3 = load ptr, ptr %left, align 8 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %cmp3 = icmp ne ptr %3, null 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   br i1 %cmp3, label %if.then4, label %if.end9 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   br label %return 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %left5 = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 1 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %4 = load ptr, ptr %left5, align 8 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %idxprom6 = sext i32 %sub to i64 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %arrayidx7 = getelementptr inbounds [64 x ptr], ptr %stack, i64 0, i64 %idxprom6 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   store ptr %4, ptr %arrayidx7, align 8 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %add8 = add nsw i32 %sub, 1 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   br label %if.end9 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %top.1 = phi i32 [ %add8, %if.then4 ], [ %sub, %while.body ] 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %right = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 2 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %5 = load ptr, ptr %right, align 8 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %cmp10 = icmp ne ptr %5, null 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   br i1 %cmp10, label %if.then11, label %if.end16 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %right12 = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 2 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %6 = load ptr, ptr %right12, align 8 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %idxprom13 = sext i32 %top.1 to i64 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %arrayidx14 = getelementptr inbounds [64 x ptr], ptr %stack, i64 0, i64 %idxprom13 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   store ptr %6, ptr %arrayidx14, align 8 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %add15 = add nsw i32 %top.1, 1 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   br label %if.end16 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   %top.2 = phi i32 [ %add15, %if.then11 ], [ %top.1, %if.end9 ] 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+Program Point:   br label %while.cond, !llvm.loop !6 
+  arrayidx2: {  }
+  right: {  }
+  right12: {  }
+  g_root: {  }
+  left: {  }
+  left5: {  }
+
+=== Evaluation Metrics [flow-sensitive] for function 'tree_size' ===
+  pointer variables tracked at exit : 6
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 10.682 ms
+  program points analyzed           : 46
+  abstract objects                  : 2
+  worklist iterations               : 126
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %stack = alloca [64 x ptr], align 8 
+Program Point:   %0 = load ptr, ptr @g_root, align 8 
+  g_root: {  }
+Program Point:   %cmp = icmp eq ptr %0, null 
+  g_root: {  }
+Program Point:   br i1 %cmp, label %if.then, label %if.end 
+  g_root: {  }
+Program Point:   br label %while.end 
+  g_root: {  }
+Program Point:   %1 = load ptr, ptr @g_root, align 8 
+  g_root: {  }
+Program Point:   %arrayidx = getelementptr inbounds [64 x ptr], ptr %stack, i64 0, i64 0 
+  g_root: {  }
+Program Point:   store ptr %1, ptr %arrayidx, align 8 
+  g_root: {  }
+Program Point:   br label %while.cond 
+  g_root: {  }
+Program Point:   ret void 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %top.0 = phi i32 [ 1, %if.end ], [ %top.2, %if.end19 ] 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %cmp1 = icmp sgt i32 %top.0, 0 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   br i1 %cmp1, label %while.body, label %while.end.loopexit 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %sub = sub nsw i32 %top.0, 1 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %idxprom = sext i32 %sub to i64 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %arrayidx2 = getelementptr inbounds [64 x ptr], ptr %stack, i64 0, i64 %idxprom 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %2 = load ptr, ptr %arrayidx2, align 8 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %left = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 1 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %3 = load ptr, ptr %left, align 8 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %right = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 2 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %4 = load ptr, ptr %right, align 8 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %left3 = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 1 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   store ptr %4, ptr %left3, align 8 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %right4 = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 2 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   store ptr %3, ptr %right4, align 8 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %left5 = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 1 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %5 = load ptr, ptr %left5, align 8 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %cmp6 = icmp ne ptr %5, null 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   br i1 %cmp6, label %if.then7, label %if.end11 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   br label %while.end 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %left8 = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 1 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %6 = load ptr, ptr %left8, align 8 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %idxprom9 = sext i32 %sub to i64 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %arrayidx10 = getelementptr inbounds [64 x ptr], ptr %stack, i64 0, i64 %idxprom9 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   store ptr %6, ptr %arrayidx10, align 8 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %add = add nsw i32 %sub, 1 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   br label %if.end11 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %top.1 = phi i32 [ %add, %if.then7 ], [ %sub, %while.body ] 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %right12 = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 2 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %7 = load ptr, ptr %right12, align 8 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %cmp13 = icmp ne ptr %7, null 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   br i1 %cmp13, label %if.then14, label %if.end19 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %right15 = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 2 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %8 = load ptr, ptr %right15, align 8 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %idxprom16 = sext i32 %top.1 to i64 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %arrayidx17 = getelementptr inbounds [64 x ptr], ptr %stack, i64 0, i64 %idxprom16 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   store ptr %8, ptr %arrayidx17, align 8 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %add18 = add nsw i32 %top.1, 1 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   br label %if.end19 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   %top.2 = phi i32 [ %add18, %if.then14 ], [ %top.1, %if.end11 ] 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+Program Point:   br label %while.cond, !llvm.loop !6 
+  left: {  }
+  left5: {  }
+  right12: {  }
+  right: {  }
+  right15: {  }
+  arrayidx2: {  }
+  g_root: {  }
+  left8: {  }
+
+=== Evaluation Metrics [flow-sensitive] for function 'tree_mirror' ===
+  pointer variables tracked at exit : 8
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 14.093 ms
+  program points analyzed           : 51
+  abstract objects                  : 2
+  worklist iterations               : 140
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %stack = alloca [64 x ptr], align 8 
+Program Point:   %0 = load ptr, ptr @g_root, align 8 
+  g_root: {  }
+Program Point:   %cmp = icmp eq ptr %0, null 
+  g_root: {  }
+Program Point:   br i1 %cmp, label %if.then, label %if.end 
+  g_root: {  }
+Program Point:   br label %return 
+  g_root: {  }
+Program Point:   %1 = load ptr, ptr @g_root, align 8 
+  g_root: {  }
+Program Point:   %arrayidx = getelementptr inbounds [64 x ptr], ptr %stack, i64 0, i64 0 
+  g_root: {  }
+Program Point:   store ptr %1, ptr %arrayidx, align 8 
+  g_root: {  }
+Program Point:   br label %while.cond 
+  g_root: {  }
+Program Point:   %retval.0 = phi i32 [ 0, %if.then ], [ %total.0, %while.end ] 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   ret i32 %retval.0 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %total.0 = phi i32 [ 0, %if.end ], [ %add, %if.end16 ] 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %top.0 = phi i32 [ 1, %if.end ], [ %top.2, %if.end16 ] 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %cmp1 = icmp sgt i32 %top.0, 0 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   br i1 %cmp1, label %while.body, label %while.end 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %sub = sub nsw i32 %top.0, 1 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %idxprom = sext i32 %sub to i64 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %arrayidx2 = getelementptr inbounds [64 x ptr], ptr %stack, i64 0, i64 %idxprom 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %2 = load ptr, ptr %arrayidx2, align 8 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %key = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 0 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %3 = load i32, ptr %key, align 8 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %add = add nsw i32 %total.0, %3 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %left = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 1 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %4 = load ptr, ptr %left, align 8 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %cmp3 = icmp ne ptr %4, null 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   br i1 %cmp3, label %if.then4, label %if.end9 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   br label %return 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %left5 = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 1 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %5 = load ptr, ptr %left5, align 8 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %idxprom6 = sext i32 %sub to i64 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %arrayidx7 = getelementptr inbounds [64 x ptr], ptr %stack, i64 0, i64 %idxprom6 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   store ptr %5, ptr %arrayidx7, align 8 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %add8 = add nsw i32 %sub, 1 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   br label %if.end9 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %top.1 = phi i32 [ %add8, %if.then4 ], [ %sub, %while.body ] 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %right = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 2 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %6 = load ptr, ptr %right, align 8 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %cmp10 = icmp ne ptr %6, null 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   br i1 %cmp10, label %if.then11, label %if.end16 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %right12 = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 2 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %7 = load ptr, ptr %right12, align 8 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %idxprom13 = sext i32 %top.1 to i64 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %arrayidx14 = getelementptr inbounds [64 x ptr], ptr %stack, i64 0, i64 %idxprom13 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   store ptr %7, ptr %arrayidx14, align 8 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %add15 = add nsw i32 %top.1, 1 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   br label %if.end16 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   %top.2 = phi i32 [ %add15, %if.then11 ], [ %top.1, %if.end9 ] 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+Program Point:   br label %while.cond, !llvm.loop !6 
+  right12: {  }
+  left5: {  }
+  right: {  }
+  g_root: {  }
+  left: {  }
+  arrayidx2: {  }
+
+=== Evaluation Metrics [flow-sensitive] for function 'tree_sum_keys' ===
+  pointer variables tracked at exit : 6
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 11.652 ms
+  program points analyzed           : 48
+  abstract objects                  : 2
+  worklist iterations               : 132
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %stack = alloca [64 x ptr], align 8 
+Program Point:   %0 = load ptr, ptr @g_root, align 8 
+  g_root: {  }
+Program Point:   %cmp = icmp eq ptr %0, null 
+  g_root: {  }
+Program Point:   br i1 %cmp, label %if.then, label %if.end 
+  g_root: {  }
+Program Point:   br label %return 
+  g_root: {  }
+Program Point:   %1 = load ptr, ptr @g_root, align 8 
+  g_root: {  }
+Program Point:   %arrayidx = getelementptr inbounds [64 x ptr], ptr %stack, i64 0, i64 0 
+  g_root: {  }
+Program Point:   store ptr %1, ptr %arrayidx, align 8 
+  g_root: {  }
+Program Point:   br label %while.cond 
+  g_root: {  }
+Program Point:   ret void 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %top.0 = phi i32 [ 1, %if.end ], [ %top.2, %if.end15 ] 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %cmp1 = icmp sgt i32 %top.0, 0 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   br i1 %cmp1, label %while.body, label %while.end 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %sub = sub nsw i32 %top.0, 1 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %idxprom = sext i32 %sub to i64 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %arrayidx2 = getelementptr inbounds [64 x ptr], ptr %stack, i64 0, i64 %idxprom 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %2 = load ptr, ptr %arrayidx2, align 8 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %left = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 1 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %3 = load ptr, ptr %left, align 8 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %cmp3 = icmp ne ptr %3, null 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   br i1 %cmp3, label %if.then4, label %if.end8 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   store ptr null, ptr @g_root, align 8 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   br label %return 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %left5 = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 1 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %4 = load ptr, ptr %left5, align 8 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %idxprom6 = sext i32 %sub to i64 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %arrayidx7 = getelementptr inbounds [64 x ptr], ptr %stack, i64 0, i64 %idxprom6 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   store ptr %4, ptr %arrayidx7, align 8 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %add = add nsw i32 %sub, 1 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   br label %if.end8 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %top.1 = phi i32 [ %add, %if.then4 ], [ %sub, %while.body ] 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %right = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 2 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %5 = load ptr, ptr %right, align 8 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %cmp9 = icmp ne ptr %5, null 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   br i1 %cmp9, label %if.then10, label %if.end15 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %right11 = getelementptr inbounds nuw %struct.Tree, ptr %2, i32 0, i32 2 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %6 = load ptr, ptr %right11, align 8 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %idxprom12 = sext i32 %top.1 to i64 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %arrayidx13 = getelementptr inbounds [64 x ptr], ptr %stack, i64 0, i64 %idxprom12 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   store ptr %6, ptr %arrayidx13, align 8 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %add14 = add nsw i32 %top.1, 1 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   br label %if.end15 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   %top.2 = phi i32 [ %add14, %if.then10 ], [ %top.1, %if.end8 ] 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   call void @free(ptr noundef %2) #3 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+Program Point:   br label %while.cond, !llvm.loop !6 
+  right11: {  }
+  left: {  }
+  g_root: {  }
+  right: {  }
+  left5: {  }
+  arrayidx2: {  }
+
+=== Evaluation Metrics [flow-sensitive] for function 'tree_destroy' ===
+  pointer variables tracked at exit : 6
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 8.471 ms
+  program points analyzed           : 45
+  abstract objects                  : 2
+  worklist iterations               : 121
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   store ptr null, ptr @g_root, align 8 
+  g_root: {  }
+Program Point:   store i32 0, ptr @g_count, align 4 
+  g_root: {  }
+Program Point:   call void @tree_insert(i32 noundef 50) 
+  g_root: {  }
+Program Point:   call void @tree_insert(i32 noundef 30) 
+  g_root: {  }
+Program Point:   call void @tree_insert(i32 noundef 70) 
+  g_root: {  }
+Program Point:   call void @tree_insert(i32 noundef 20) 
+  g_root: {  }
+Program Point:   call void @tree_insert(i32 noundef 40) 
+  g_root: {  }
+Program Point:   call void @tree_insert(i32 noundef 60) 
+  g_root: {  }
+Program Point:   call void @tree_insert(i32 noundef 80) 
+  g_root: {  }
+Program Point:   call void @tree_insert(i32 noundef 10) 
+  g_root: {  }
+Program Point:   call void @tree_insert(i32 noundef 35) 
+  g_root: {  }
+Program Point:   %call = call ptr @tree_find(i32 noundef 40) 
+  g_root: {  }
+Program Point:   %cmp = icmp ne ptr %call, null 
+  g_root: {  }
+Program Point:   br i1 %cmp, label %if.then, label %if.end 
+  g_root: {  }
+Program Point:   %key = getelementptr inbounds nuw %struct.Tree, ptr %call, i32 0, i32 0 
+  g_root: {  }
+Program Point:   %0 = load i32, ptr %key, align 8 
+  g_root: {  }
+Program Point:   br label %if.end 
+  g_root: {  }
+Program Point:   %found_key.0 = phi i32 [ %0, %if.then ], [ 0, %entry ] 
+  g_root: {  }
+Program Point:   %call1 = call i32 @tree_size() 
+  g_root: {  }
+Program Point:   %call2 = call i32 @tree_sum_keys() 
+  g_root: {  }
+Program Point:   call void @tree_mirror() 
+  g_root: {  }
+Program Point:   %call3 = call ptr @tree_find(i32 noundef 40) 
+  g_root: {  }
+Program Point:   %cmp4 = icmp ne ptr %call3, null 
+  g_root: {  }
+Program Point:   br i1 %cmp4, label %if.then5, label %if.end7 
+  g_root: {  }
+Program Point:   %key6 = getelementptr inbounds nuw %struct.Tree, ptr %call3, i32 0, i32 0 
+  g_root: {  }
+Program Point:   %1 = load i32, ptr %key6, align 8 
+  g_root: {  }
+Program Point:   br label %if.end7 
+  g_root: {  }
+Program Point:   %after_key.0 = phi i32 [ %1, %if.then5 ], [ 0, %if.end ] 
+  g_root: {  }
+Program Point:   call void @tree_destroy() 
+  g_root: {  }
+Program Point:   %add = add nsw i32 %call1, %call2 
+  g_root: {  }
+Program Point:   %add8 = add nsw i32 %add, %found_key.0 
+  g_root: {  }
+Program Point:   %add9 = add nsw i32 %add8, %after_key.0 
+  g_root: {  }
+Program Point:   ret i32 %add9 
+  g_root: {  }
+
+=== Evaluation Metrics [flow-sensitive] for function 'main' ===
+  pointer variables tracked at exit : 1
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 2.495 ms
+  program points analyzed           : 33
+  abstract objects                  : 3
+  worklist iterations               : 67
+============================================
+
+---- flow-insensitive (baseline) ----
+Function-level point-to map [flow-insensitive]: 
+Function: make_tree_node
+
+=== Evaluation Metrics [flow-insensitive] for function 'make_tree_node' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.019 ms
+  program points analyzed            : 10
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: tree_insert
+  g_root: { call }
+
+=== Evaluation Metrics [flow-insensitive] for function 'tree_insert' ===
+  pointer variables tracked          : 1
+  avg points-to set size             : 1.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.030 ms
+  program points analyzed            : 37
+  abstract objects                   : 2
+  fixpoint iterations                : 3
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: tree_find
+
+=== Evaluation Metrics [flow-insensitive] for function 'tree_find' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.003 ms
+  program points analyzed            : 25
+  abstract objects                   : 1
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: tree_size
+
+=== Evaluation Metrics [flow-insensitive] for function 'tree_size' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.007 ms
+  program points analyzed            : 46
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: tree_mirror
+
+=== Evaluation Metrics [flow-insensitive] for function 'tree_mirror' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.009 ms
+  program points analyzed            : 51
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: tree_sum_keys
+
+=== Evaluation Metrics [flow-insensitive] for function 'tree_sum_keys' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.007 ms
+  program points analyzed            : 48
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: tree_destroy
+  g_root: {  }
+
+=== Evaluation Metrics [flow-insensitive] for function 'tree_destroy' ===
+  pointer variables tracked          : 1
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.007 ms
+  program points analyzed            : 45
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: main
+  g_root: {  }
+
+=== Evaluation Metrics [flow-insensitive] for function 'main' ===
+  pointer variables tracked          : 1
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.002 ms
+  program points analyzed            : 33
+  abstract objects                   : 3
+  fixpoint iterations                : 1
+============================================

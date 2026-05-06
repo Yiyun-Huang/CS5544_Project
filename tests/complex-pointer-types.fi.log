@@ -1,0 +1,20 @@
+Function-level point-to map [flow-insensitive]: 
+Function: main
+  e: { x }
+  a: { x }
+  g: { x; y }
+  f: { x; y }
+  c: { b }
+  d: { f }
+  b: { x }
+
+=== Evaluation Metrics [flow-insensitive] for function 'main' ===
+  pointer variables tracked          : 7
+  avg points-to set size             : 1.286
+  #may-alias pairs                   : 10
+  #must-alias pairs                  : 3
+  analysis time                      : 0.066 ms
+  program points analyzed            : 26
+  abstract objects                   : 9
+  fixpoint iterations                : 2
+============================================

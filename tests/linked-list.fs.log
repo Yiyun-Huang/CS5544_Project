@@ -1,0 +1,501 @@
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %call = call noalias ptr @malloc(i64 noundef 16) #3 
+Program Point:   %val = getelementptr inbounds nuw %struct.Node, ptr %call, i32 0, i32 0 
+Program Point:   store i32 %v, ptr %val, align 8 
+Program Point:   %next = getelementptr inbounds nuw %struct.Node, ptr %call, i32 0, i32 1 
+Program Point:   store ptr null, ptr %next, align 8 
+Program Point:   ret ptr %call 
+
+=== Evaluation Metrics [flow-sensitive] for function 'make_node' ===
+  pointer variables tracked at exit : 0
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 0.046 ms
+  program points analyzed           : 6
+  abstract objects                  : 3
+  worklist iterations               : 6
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %call = call ptr @make_node(i32 noundef %v) 
+Program Point:   %0 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   %next = getelementptr inbounds nuw %struct.Node, ptr %call, i32 0, i32 1 
+  g_head: {  }
+Program Point:   store ptr %0, ptr %next, align 8 
+  g_head: {  }
+Program Point:   store ptr %call, ptr @g_head, align 8 
+  g_head: { call }
+Program Point:   %1 = load ptr, ptr @g_tail, align 8 
+  g_head: { call }
+  g_tail: {  }
+Program Point:   %cmp = icmp eq ptr %1, null 
+  g_head: { call }
+  g_tail: {  }
+Program Point:   br i1 %cmp, label %if.then, label %if.end 
+  g_head: { call }
+  g_tail: {  }
+Program Point:   store ptr %call, ptr @g_tail, align 8 
+  g_head: { call }
+  g_tail: { call }
+Program Point:   br label %if.end 
+  g_head: { call }
+  g_tail: { call }
+Program Point:   ret void 
+  g_head: { call }
+  g_tail: { call }
+
+=== Evaluation Metrics [flow-sensitive] for function 'push_front' ===
+  pointer variables tracked at exit : 2
+  avg points-to set size at exit    : 1.000
+  #may-alias pairs   (any point)    : 1
+  #must-alias pairs  (any point)    : 1
+  analysis time                     : 0.420 ms
+  program points analyzed           : 11
+  abstract objects                  : 3
+  worklist iterations               : 21
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %call = call ptr @make_node(i32 noundef %v) 
+Program Point:   %0 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   %cmp = icmp eq ptr %0, null 
+  g_head: {  }
+Program Point:   br i1 %cmp, label %if.then, label %if.else 
+  g_head: {  }
+Program Point:   store ptr %call, ptr @g_head, align 8 
+  g_head: { call }
+Program Point:   store ptr %call, ptr @g_tail, align 8 
+  g_head: { call }
+  g_tail: { call }
+Program Point:   br label %if.end 
+  g_head: { call }
+  g_tail: { call }
+Program Point:   %1 = load ptr, ptr @g_tail, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %next = getelementptr inbounds nuw %struct.Node, ptr %1, i32 0, i32 1 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   store ptr %call, ptr %next, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   store ptr %call, ptr @g_tail, align 8 
+  g_head: {  }
+  g_tail: { call }
+Program Point:   br label %if.end 
+  g_head: {  }
+  g_tail: { call }
+Program Point:   ret void 
+  g_head: { call }
+  g_tail: { call }
+
+=== Evaluation Metrics [flow-sensitive] for function 'push_back' ===
+  pointer variables tracked at exit : 2
+  avg points-to set size at exit    : 1.000
+  #may-alias pairs   (any point)    : 1
+  #must-alias pairs  (any point)    : 1
+  analysis time                     : 0.473 ms
+  program points analyzed           : 13
+  abstract objects                  : 3
+  worklist iterations               : 25
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %0 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   %cmp = icmp eq ptr %0, null 
+  g_head: {  }
+Program Point:   br i1 %cmp, label %if.then, label %if.end 
+  g_head: {  }
+Program Point:   br label %return 
+  g_head: {  }
+Program Point:   %1 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   %2 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   %next = getelementptr inbounds nuw %struct.Node, ptr %2, i32 0, i32 1 
+  g_head: {  }
+Program Point:   %3 = load ptr, ptr %next, align 8 
+  g_head: {  }
+  next: {  }
+Program Point:   store ptr %3, ptr @g_head, align 8 
+  g_head: {  }
+  next: {  }
+Program Point:   %4 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+  next: {  }
+Program Point:   %cmp1 = icmp eq ptr %4, null 
+  g_head: {  }
+  next: {  }
+Program Point:   br i1 %cmp1, label %if.then2, label %if.end3 
+  g_head: {  }
+  next: {  }
+Program Point:   %retval.0 = phi ptr [ null, %if.then ], [ %1, %if.end3 ] 
+  g_head: {  }
+  next: {  }
+  g_tail: {  }
+Program Point:   ret ptr %retval.0 
+  g_head: {  }
+  next: {  }
+  g_tail: {  }
+Program Point:   store ptr null, ptr @g_tail, align 8 
+  g_head: {  }
+  next: {  }
+  g_tail: {  }
+Program Point:   br label %if.end3 
+  g_head: {  }
+  next: {  }
+  g_tail: {  }
+Program Point:   %next4 = getelementptr inbounds nuw %struct.Node, ptr %1, i32 0, i32 1 
+  g_head: {  }
+  next: {  }
+  g_tail: {  }
+Program Point:   store ptr null, ptr %next4, align 8 
+  g_head: {  }
+  next: {  }
+  g_tail: {  }
+Program Point:   br label %return 
+  g_head: {  }
+  next: {  }
+  g_tail: {  }
+
+=== Evaluation Metrics [flow-sensitive] for function 'pop_front' ===
+  pointer variables tracked at exit : 3
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 1.412 ms
+  program points analyzed           : 19
+  abstract objects                  : 2
+  worklist iterations               : 40
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %0 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   br label %while.cond 
+  g_head: {  }
+Program Point:   %cur.0 = phi ptr [ %0, %entry ], [ %2, %if.end ] 
+  next: {  }
+  g_head: {  }
+Program Point:   %cmp = icmp ne ptr %cur.0, null 
+  next: {  }
+  g_head: {  }
+Program Point:   br i1 %cmp, label %while.body, label %while.end 
+  next: {  }
+  g_head: {  }
+Program Point:   %val = getelementptr inbounds nuw %struct.Node, ptr %cur.0, i32 0, i32 0 
+  next: {  }
+  g_head: {  }
+Program Point:   %1 = load i32, ptr %val, align 8 
+  next: {  }
+  g_head: {  }
+Program Point:   %cmp1 = icmp eq i32 %1, %v 
+  next: {  }
+  g_head: {  }
+Program Point:   br i1 %cmp1, label %if.then, label %if.end 
+  next: {  }
+  g_head: {  }
+Program Point:   br label %return 
+  next: {  }
+  g_head: {  }
+Program Point:   br label %return 
+  next: {  }
+  g_head: {  }
+Program Point:   %next = getelementptr inbounds nuw %struct.Node, ptr %cur.0, i32 0, i32 1 
+  next: {  }
+  g_head: {  }
+Program Point:   %2 = load ptr, ptr %next, align 8 
+  next: {  }
+  g_head: {  }
+Program Point:   br label %while.cond, !llvm.loop !6 
+  next: {  }
+  g_head: {  }
+Program Point:   %retval.0 = phi ptr [ %cur.0, %if.then ], [ null, %while.end ] 
+  next: {  }
+  g_head: {  }
+Program Point:   ret ptr %retval.0 
+  next: {  }
+  g_head: {  }
+
+=== Evaluation Metrics [flow-sensitive] for function 'find' ===
+  pointer variables tracked at exit : 2
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 1.227 ms
+  program points analyzed           : 16
+  abstract objects                  : 2
+  worklist iterations               : 46
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %0 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   br label %while.cond 
+  g_head: {  }
+Program Point:   %cur.0 = phi ptr [ %0, %entry ], [ %1, %while.body ] 
+  g_head: {  }
+  next1: {  }
+Program Point:   %prev.0 = phi ptr [ null, %entry ], [ %cur.0, %while.body ] 
+  g_head: {  }
+  next1: {  }
+Program Point:   %cmp = icmp ne ptr %cur.0, null 
+  g_head: {  }
+  next1: {  }
+Program Point:   br i1 %cmp, label %while.body, label %while.end 
+  g_head: {  }
+  next1: {  }
+Program Point:   %next1 = getelementptr inbounds nuw %struct.Node, ptr %cur.0, i32 0, i32 1 
+  g_head: {  }
+  next1: {  }
+Program Point:   %1 = load ptr, ptr %next1, align 8 
+  g_head: {  }
+  next1: {  }
+Program Point:   %next2 = getelementptr inbounds nuw %struct.Node, ptr %cur.0, i32 0, i32 1 
+  g_head: {  }
+  next1: {  }
+Program Point:   store ptr %prev.0, ptr %next2, align 8 
+  g_head: {  }
+  next1: {  }
+Program Point:   br label %while.cond, !llvm.loop !6 
+  g_head: {  }
+  next1: {  }
+Program Point:   %2 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+  next1: {  }
+Program Point:   store ptr %2, ptr @g_tail, align 8 
+  g_head: {  }
+  next1: {  }
+  g_tail: {  }
+Program Point:   store ptr %prev.0, ptr @g_head, align 8 
+  g_head: {  }
+  next1: {  }
+  g_tail: {  }
+Program Point:   ret void 
+  g_head: {  }
+  next1: {  }
+  g_tail: {  }
+
+=== Evaluation Metrics [flow-sensitive] for function 'reverse' ===
+  pointer variables tracked at exit : 3
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 0.959 ms
+  program points analyzed           : 15
+  abstract objects                  : 2
+  worklist iterations               : 39
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %cmp = icmp eq ptr %other_head, null 
+Program Point:   br i1 %cmp, label %if.then, label %if.end 
+Program Point:   br label %if.end3 
+Program Point:   %0 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   %cmp1 = icmp eq ptr %0, null 
+  g_head: {  }
+Program Point:   br i1 %cmp1, label %if.then2, label %if.else 
+  g_head: {  }
+Program Point:   ret void 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   store ptr %other_head, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   store ptr %other_tail, ptr @g_tail, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   br label %if.end3 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %1 = load ptr, ptr @g_tail, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %next = getelementptr inbounds nuw %struct.Node, ptr %1, i32 0, i32 1 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   store ptr %other_head, ptr %next, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   store ptr %other_tail, ptr @g_tail, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   br label %if.end3 
+  g_head: {  }
+  g_tail: {  }
+
+=== Evaluation Metrics [flow-sensitive] for function 'append_list' ===
+  pointer variables tracked at exit : 2
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 0.434 ms
+  program points analyzed           : 15
+  abstract objects                  : 2
+  worklist iterations               : 27
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   store ptr null, ptr @g_head, align 8 
+  g_head: {  }
+Program Point:   store ptr null, ptr @g_tail, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   call void @push_back(i32 noundef 10) 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   call void @push_back(i32 noundef 20) 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   call void @push_back(i32 noundef 30) 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   call void @push_front(i32 noundef 5) 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %call = call ptr @find(i32 noundef 20) 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %cmp = icmp ne ptr %call, null 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   br i1 %cmp, label %if.then, label %if.end 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %val = getelementptr inbounds nuw %struct.Node, ptr %call, i32 0, i32 0 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %0 = load i32, ptr %val, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   br label %if.end 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %found_val.0 = phi i32 [ %0, %if.then ], [ 0, %entry ] 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %call1 = call ptr @make_node(i32 noundef 100) 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %call2 = call ptr @make_node(i32 noundef 200) 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %call3 = call ptr @make_node(i32 noundef 300) 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %next = getelementptr inbounds nuw %struct.Node, ptr %call1, i32 0, i32 1 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   store ptr %call2, ptr %next, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %next4 = getelementptr inbounds nuw %struct.Node, ptr %call2, i32 0, i32 1 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   store ptr %call3, ptr %next4, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   call void @append_list(ptr noundef %call1, ptr noundef %call3) 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   call void @reverse() 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %1 = load ptr, ptr @g_head, align 8 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   br label %while.cond 
+  g_head: {  }
+  g_tail: {  }
+Program Point:   %sum.0 = phi i32 [ 0, %if.end ], [ %add, %while.body ] 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %cur.0 = phi ptr [ %1, %if.end ], [ %3, %while.body ] 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %cmp5 = icmp ne ptr %cur.0, null 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   br i1 %cmp5, label %while.body, label %while.end 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %val6 = getelementptr inbounds nuw %struct.Node, ptr %cur.0, i32 0, i32 0 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %2 = load i32, ptr %val6, align 8 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %add = add nsw i32 %sum.0, %2 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %next7 = getelementptr inbounds nuw %struct.Node, ptr %cur.0, i32 0, i32 1 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %3 = load ptr, ptr %next7, align 8 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   br label %while.cond, !llvm.loop !6 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %call8 = call ptr @pop_front() 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %cmp9 = icmp ne ptr %call8, null 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   br i1 %cmp9, label %if.then10, label %if.end12 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %val11 = getelementptr inbounds nuw %struct.Node, ptr %call8, i32 0, i32 0 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %4 = load i32, ptr %val11, align 8 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   call void @free(ptr noundef %call8) #3 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   br label %if.end12 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %popped_val.0 = phi i32 [ %4, %if.then10 ], [ 0, %while.end ] 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %add13 = add nsw i32 %sum.0, %found_val.0 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   %add14 = add nsw i32 %add13, %popped_val.0 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+Program Point:   ret i32 %add14 
+  g_head: {  }
+  next7: {  }
+  g_tail: {  }
+
+=== Evaluation Metrics [flow-sensitive] for function 'main' ===
+  pointer variables tracked at exit : 3
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 8.163 ms
+  program points analyzed           : 45
+  abstract objects                  : 7
+  worklist iterations               : 112
+============================================

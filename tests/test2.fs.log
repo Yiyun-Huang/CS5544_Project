@@ -1,0 +1,137 @@
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %call = call noalias ptr @malloc(i64 noundef 4) #2 
+Program Point:   store ptr %call, ptr @p, align 8 
+  p: { call }
+Program Point:   %call1 = call noalias ptr @malloc(i64 noundef 4) #2 
+  p: { call }
+Program Point:   store ptr %call1, ptr @q, align 8 
+  p: { call }
+  q: { call1 }
+Program Point:   %0 = load ptr, ptr @q, align 8 
+  p: { call }
+  q: { call1 }
+Program Point:   store ptr %0, ptr @p, align 8 
+  p: { call1 }
+  q: { call1 }
+Program Point:   %call2 = call noalias ptr @malloc(i64 noundef 4) #2 
+  p: { call1 }
+  q: { call1 }
+Program Point:   store ptr %call2, ptr @r, align 8 
+  p: { call1 }
+  r: { call2 }
+  q: { call1 }
+Program Point:   %1 = load ptr, ptr @r, align 8 
+  p: { call1 }
+  r: { call2 }
+  q: { call1 }
+Program Point:   store ptr %1, ptr @q, align 8 
+  p: { call1 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   %tobool = icmp ne i32 undef, 0 
+  p: { call1 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   br i1 %tobool, label %if.then, label %if.else 
+  p: { call1 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   %2 = load ptr, ptr @r, align 8 
+  p: { call1 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   store ptr %2, ptr @p, align 8 
+  p: { call1; call2 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   br label %if.end 
+  p: { call1; call2 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   %call3 = call noalias ptr @malloc(i64 noundef 8) #2 
+  p: { call1 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   store ptr %call3, ptr @p, align 8 
+  p: { call1; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   br label %if.end 
+  p: { call1; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   %tobool4 = icmp ne i32 undef, 0 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   br i1 %tobool4, label %if.then5, label %if.end6 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   %3 = load ptr, ptr @q, align 8 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   store ptr %3, ptr @p, align 8 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   br label %if.end6 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   %4 = load ptr, ptr @p, align 8 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   %5 = load i32, ptr %4, align 4 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   %tobool7 = icmp ne i32 0, 0 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   br i1 %tobool7, label %if.then8, label %if.end9 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   %6 = load ptr, ptr @p, align 8 
+  p: { call1; call2; call3 }
+  r: { call2 }
+  q: { call2 }
+Program Point:   store ptr %6, ptr @r, align 8 
+  p: { call1; call2; call3 }
+  r: { call1; call2; call3 }
+  q: { call2 }
+Program Point:   br label %if.end9 
+  p: { call1; call2; call3 }
+  r: { call1; call2; call3 }
+  q: { call2 }
+Program Point:   %7 = load ptr, ptr @r, align 8 
+  p: { call1; call2; call3 }
+  r: { call1; call2; call3 }
+  q: { call2 }
+Program Point:   %8 = load i32, ptr %7, align 4 
+  p: { call1; call2; call3 }
+  r: { call1; call2; call3 }
+  q: { call2 }
+Program Point:   %add = add nsw i32 %8, %5 
+  p: { call1; call2; call3 }
+  r: { call1; call2; call3 }
+  q: { call2 }
+Program Point:   ret i32 %add 
+  p: { call1; call2; call3 }
+  r: { call1; call2; call3 }
+  q: { call2 }
+
+=== Evaluation Metrics [flow-sensitive] for function 'main' ===
+  pointer variables tracked at exit : 3
+  avg points-to set size at exit    : 2.333
+  #may-alias pairs   (any point)    : 3
+  #must-alias pairs  (any point)    : 2
+  analysis time                     : 4.077 ms
+  program points analyzed           : 34
+  abstract objects                  : 7
+  worklist iterations               : 69
+============================================

@@ -1,0 +1,65 @@
+Per-program point point-to sets [flow-sensitive]: 
+Program Point:   %call = call noalias ptr @malloc(i64 noundef 20) #2 
+Program Point:   store ptr %call, ptr @a, align 8 
+  a: { call }
+Program Point:   %call1 = call noalias ptr @malloc(i64 noundef 20) #2 
+  a: { call }
+Program Point:   store ptr %call1, ptr @b, align 8 
+  b: { call1 }
+  a: { call }
+Program Point:   %0 = load ptr, ptr @b, align 8 
+  b: { call1 }
+  a: { call }
+Program Point:   store ptr %0, ptr @a, align 8 
+  b: { call1 }
+  a: { call1 }
+Program Point:   %call2 = call noalias ptr @malloc(i64 noundef 24) #2 
+  b: { call1 }
+  a: { call1 }
+Program Point:   store ptr %call2, ptr @a, align 8 
+  b: { call1 }
+  a: { call2 }
+Program Point:   %tobool = icmp ne i32 1, 0 
+  b: { call1 }
+  a: { call2 }
+Program Point:   br i1 %tobool, label %if.then, label %if.else 
+  b: { call1 }
+  a: { call2 }
+Program Point:   %1 = load ptr, ptr @b, align 8 
+  b: { call1 }
+  a: { call2 }
+Program Point:   store ptr %1, ptr @a, align 8 
+  b: { call1 }
+  a: { call1; call2 }
+Program Point:   br label %if.end 
+  b: { call1 }
+  a: { call1; call2 }
+Program Point:   %call3 = call noalias ptr @malloc(i64 noundef 16) #2 
+  b: { call1 }
+  a: { call2 }
+Program Point:   store ptr %call3, ptr @a, align 8 
+  b: { call1 }
+  a: { call2; call3 }
+Program Point:   br label %if.end 
+  b: { call1 }
+  a: { call2; call3 }
+Program Point:   %2 = load ptr, ptr @a, align 8 
+  b: { call1 }
+  a: { call1; call2; call3 }
+Program Point:   %3 = load i32, ptr %2, align 4 
+  b: { call1 }
+  a: { call1; call2; call3 }
+Program Point:   ret i32 %3 
+  b: { call1 }
+  a: { call1; call2; call3 }
+
+=== Evaluation Metrics [flow-sensitive] for function 'main' ===
+  pointer variables tracked at exit : 2
+  avg points-to set size at exit    : 2.000
+  #may-alias pairs   (any point)    : 1
+  #must-alias pairs  (any point)    : 1
+  analysis time                     : 1.183 ms
+  program points analyzed           : 19
+  abstract objects                  : 6
+  worklist iterations               : 37
+============================================

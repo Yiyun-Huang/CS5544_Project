@@ -1,0 +1,14 @@
+# macOS junk
+.DS_Store
+**/.DS_Store
+
+# Build dependency tracking
+build/.deps/
+
+# Old/intermediate test logs (only keep latest combined log)
+tests/all_tests.log
+tests/all_tests_v[1-5].log
+
+# Editor swap files
+*~
+*.swp
