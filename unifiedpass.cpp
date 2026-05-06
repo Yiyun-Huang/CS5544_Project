@@ -45,14 +45,19 @@ namespace {
 // Shared utilities
 // =============================================================================
 struct PointState {
-    DenseMap<Value*, BitVector> in;
-    DenseMap<Value*, BitVector> out;
-    DenseMap<Value*, BitVector> gen;
-    DenseMap<Value*, BitVector> kill;
+    DenseMap<Value*, BitVector> in;     // may in
+    DenseMap<Value*, BitVector> out;    // may out
+    DenseMap<Value*, BitVector> mustin;
+    DenseMap<Value*, BitVector> mustout;    
+    DenseMap<Value*, BitVector> gen;    // cosnt gen
+    DenseMap<Value*, BitVector> depgen;
+    DenseMap<Value*, BitVector> kill;   // const kill
+    DenseMap<Value*, BitVector> depkill;
 };
 
-void prettyPrintPointState(raw_ostream& OS, PointState ps, std::vector<Value*> abstractObjects) {
-    for (auto& [key, value] : ps.out) {
+void prettyPrintPointState(raw_ostream& OS, DenseMap<Value*, BitVector> dfaValue, std::vector<Value*> abstractObjects) {
+    if (dfaValue.empty()) OS << "  { }\n";
+    for (auto& [key, value] : dfaValue) {
         if (key->getName() == "") continue;
         OS << "  " << key->getName() << ": { ";
         bool first = true;
@@ -96,14 +101,21 @@ static BitVector meetUnion(const std::vector<BitVector>& ins) {
     return out;
 }
 
+// Set difference: bv1 - bv2 (clears bits in bv1 that are also set in bv2)
 static BitVector bitVectorSub(BitVector bv1, BitVector bv2) {
-    if (bv1.size() != bv2.size()) return {};
-    for (int i = 0; i < bv1.size(); ++i) {
-        if (bv1[i] == 1 && bv2[i] == 1) {
-            bv1.flip(static_cast<unsigned>(i));
-        }
+  if (bv1.size() != bv2.size()) {
+    if (bv2.size() == 0) {
+        return bv1;
+    } else if (bv1.size() == 0) {
+        return bv2;
+    } else return {};
+  }
+  for (int i = 0; i < bv1.size(); ++i) {
+    if (bv1[i] == 1 && bv2[i] == 1) {
+      bv1.flip(static_cast<unsigned>(i));
     }
-    return bv1;
+  }
+  return bv1;
 }
 
 // Collect abstract objects: stack allocas, malloc-like calls returning a
@@ -131,13 +143,8 @@ static std::vector<Value*> collectAbstractObjects(Function& F) {
 }
 
 // Decode a BitVector into the list of abstract locations it represents.
-static std::vector<Value*> getPointsToValue(const DenseMap<Value*, BitVector>& pointsToInfo,
-                                            Value* pointer,
-                                            const std::vector<Value*>& abstractObjects) {
-    auto it = pointsToInfo.find(pointer);
+static std::vector<Value*> getPointsToValueFromBV(BitVector bv, std::vector<Value*> abstractObjects) {
     std::vector<Value*> rtn;
-    if (it == pointsToInfo.end()) return rtn;
-    const BitVector& bv = it->second;
     for (unsigned i = 0; i < bv.size(); ++i) {
         if (!bv.test(i)) continue;
         rtn.push_back(abstractObjects[i]);
@@ -298,6 +305,18 @@ static void reportMetricsSingle(raw_ostream& OS,
 // =============================================================================
 struct FlowSensitivePointsTo : PassInfoMixin<FlowSensitivePointsTo> {
 
+    // A helper function to merge multiple DenseMap<Value*, BitVector> objects. 
+    static DenseMap<Value*, BitVector> denseMapSub(DenseMap<Value*, BitVector> dm1, DenseMap<Value*, BitVector> dm2) {
+        DenseMap<Value*, BitVector> newMap = dm1; 
+        for (auto& [key, value] : newMap) {
+            auto it = dm2.find(key);
+            if (it != dm2.end()) {  // if the key exists in dm2
+                value = bitVectorSub(value, it->second);
+            } 
+        }
+        return newMap;
+    }
+
     static DenseMap<Value*, BitVector> mergeDenseMaps(std::vector<DenseMap<Value*, BitVector>> maps) {
         DenseMap<Value*, BitVector> newMap;
         for (int i = 0; i < (int)maps.size(); i++) {
@@ -305,21 +324,37 @@ struct FlowSensitivePointsTo : PassInfoMixin<FlowSensitivePointsTo> {
                 auto it = newMap.find(key);
                 if (it != newMap.end()) {
                     auto& newMapValue = it->second;
-                    std::vector<BitVector> unionParams;
-                    unionParams.push_back(newMapValue);
-                    unionParams.push_back(value);
-                    newMap[key] = meetUnion(unionParams);
+
+                    BitVector unionCalc = newMapValue;
+                    unionCalc |= value;
+                    newMap[key] = unionCalc;
                 } else {
                     newMap.insert({key, value});
-                }
+                }   
             }
         }
         return newMap;
     }
 
-    static DenseMap<Value*, BitVector> getInSet(Instruction* Ins,
-                                                DenseMap<const Instruction*, PointState> st,
-                                                int /*size*/) {
+    static DenseMap<Value*, BitVector> intersectDenseMaps(std::vector<DenseMap<Value*, BitVector>> maps) {
+        DenseMap<Value*, BitVector> newMap = maps[0];
+        for (int i = 1; i < (int)maps.size(); i++) { 
+            DenseMap<Value*, BitVector> tempMap;
+            for (auto& [key, value] : maps[i]) {
+                auto it = newMap.find(key);
+                if (it == newMap.end()) continue;  // key not in newMap
+                auto& newMapValue = it->second;
+                std::vector<BitVector> intersectParams;
+                intersectParams.push_back(newMapValue);
+                intersectParams.push_back(value);
+                tempMap[key] = meetIntersect(intersectParams);
+            }
+            newMap = tempMap;
+        }
+        return newMap;
+    }
+
+    static DenseMap<Value*, BitVector> getInSet(Instruction* Ins, DenseMap<const Instruction*, PointState> st, bool isMustIn) {
         Instruction* prevIns = Ins->getPrevNode();
         if (prevIns == nullptr) {
             if (Ins->getParent()->isEntryBlock()) {
@@ -329,11 +364,23 @@ struct FlowSensitivePointsTo : PassInfoMixin<FlowSensitivePointsTo> {
                 std::vector<DenseMap<Value*, BitVector>> predOutSets;
                 for (BasicBlock* pred : predecessors(Ins->getParent())) {
                     Instruction* lastIns = &pred->back();
-                    predOutSets.push_back(st[lastIns].out);
+                    if (isMustIn) {
+                        predOutSets.push_back(st[lastIns].mustout);
+                    } else {
+                        predOutSets.push_back(st[lastIns].out);
+                    }
                 }
-                return mergeDenseMaps(predOutSets);
+                if (isMustIn) {
+                    return intersectDenseMaps(predOutSets);
+                } else {
+                    return mergeDenseMaps(predOutSets);
+                }
+                
             }
         }
+        if (isMustIn) {
+            return st[prevIns].mustout;
+        } 
         return st[prevIns].out;
     }
 
@@ -355,81 +402,82 @@ struct FlowSensitivePointsTo : PassInfoMixin<FlowSensitivePointsTo> {
     }
 
     // Transfer function: OUT[Ins] from IN[Ins].
-    static DenseMap<Value*, BitVector> transferFunc(Instruction* Ins, PointState ps,
-                                                    std::vector<Value*> abstractObjects,
-                                                    DominatorTree& DT, Function& F) {
-        DenseMap<Value*, BitVector> outMap = ps.in;
-
+    static PointState transferFunc(Instruction* Ins, PointState ps, DenseMap<Value*, BitVector> prevIn, std::vector<Value*> abstractObjects) {
+        BitVector constGen(abstractObjects.size(), false); 
+        BitVector depGen(abstractObjects.size(), false); 
+        BitVector constKill(abstractObjects.size(), true); 
+        // BitVector depKill(abstractObjects.size(), false); 
         if (auto* Load = dyn_cast<LoadInst>(Ins)) {
             if (Load->getType()->isPointerTy()) {
                 Value* pointerOperand = Load->getPointerOperand();
                 auto it2 = std::find(abstractObjects.begin(), abstractObjects.end(), pointerOperand);
-                if (it2 == abstractObjects.end()) {
-                    std::vector<Value*> pointerTargets = getPointsToValue(outMap, pointerOperand, abstractObjects);
-                    if (pointerTargets.size() == 1) {
-                        pointerOperand = pointerTargets[0];
+                bool pointerOperandIsAloc = it2 != abstractObjects.end() && *it2 == pointerOperand;
+
+                if (pointerOperandIsAloc) {
+                    ps.gen[Load] = prevIn[pointerOperand];
+                } else {
+                    BitVector bv = prevIn[pointerOperand]; 
+                    std::vector<Value*> targets = getPointsToValueFromBV(bv, abstractObjects);
+                    for (int i = 0; i < targets.size(); i ++) {
+                        ps.depgen[Load] |= prevIn[targets[i]];
                     }
                 }
-                BitVector bv = outMap[Load];
-                BitVector ptrBv = outMap[pointerOperand];
-                std::vector<BitVector> unionParams;
-                unionParams.push_back(bv);
-                unionParams.push_back(ptrBv);
-                outMap[Load] = meetUnion(unionParams);
             }
         }
+        // Stores of a pointer value
         else if (auto* Store = dyn_cast<StoreInst>(Ins)) {
             if (Store->getValueOperand()->getType()->isPointerTy()) {
-                Value* valueOp = Store->getValueOperand();
-                Value* pointerOp = Store->getPointerOperand();
-                BasicBlock* exitBlock = &F.back();
+                Value* targetValue = Store->getValueOperand(); 
+                auto it = std::find(abstractObjects.begin(), abstractObjects.end(), targetValue);
+                bool targetIsAloc = it != abstractObjects.end() && *it == targetValue;
 
-                std::vector<Value*> targets;
-                auto it2 = std::find(abstractObjects.begin(), abstractObjects.end(), pointerOp);
-                if (it2 != abstractObjects.end()) {
-                    targets.push_back(pointerOp);
-                } else if (auto* AddrLoad = dyn_cast<LoadInst>(pointerOp)) {
-                    if (AddrLoad->getType()->isPointerTy()) {
-                        targets = getPointsToValue(outMap, AddrLoad, abstractObjects);
-                    }
-                }
+                Value* pointerOperand = Store->getPointerOperand();
+                auto it2 = std::find(abstractObjects.begin(), abstractObjects.end(), pointerOperand);
+                bool pointerOperandIsAloc = it2 != abstractObjects.end() && *it2 == pointerOperand;
 
-                BitVector newVal(abstractObjects.size(), false);
-                auto it = std::find(abstractObjects.begin(), abstractObjects.end(), valueOp);
-                if (it != abstractObjects.end()) {
-                    newVal.set(static_cast<unsigned>(it - abstractObjects.begin()));
-                } else {
-                    auto vIt = outMap.find(valueOp);
-                    if (vIt != outMap.end() && vIt->second.size() == abstractObjects.size()) {
-                        newVal = vIt->second;
-                    }
-                }
+                // CONSTGEN (stores in the form x = where x is a pointer var (not a pointer indirection))
 
-                bool isStrong = (targets.size() == 1)
-                                && DT.dominates(Ins->getParent(), exitBlock);
-
-                for (Value* target : targets) {
-                    if (isStrong) {
-                        outMap[target] = newVal;
+                if (pointerOperandIsAloc) {
+                    if (targetIsAloc) {
+                        // a = &x
+                        constGen.set(static_cast<unsigned>(it - abstractObjects.begin()));
                     } else {
-                        BitVector oldVal = outMap[target];
-                        if (oldVal.size() != abstractObjects.size()) {
-                            oldVal = BitVector(abstractObjects.size(), false);
+                        // a = b
+                        constGen = prevIn[targetValue];  // pointer will point to everything that the targetValue currently points to
+                    }
+
+                    ps.gen[pointerOperand] = constGen;
+                    ps.kill[pointerOperand] = constKill;
+                    
+                } else {
+                    // DEPGEN
+                    BitVector bv = prevIn[pointerOperand]; 
+                    std::vector<Value*> targets = getPointsToValueFromBV(bv, abstractObjects);
+                    if (targetIsAloc) {
+                        for (int i = 0; i < targets.size(); i ++) {
+                            depGen.set(static_cast<unsigned>(it - abstractObjects.begin()));
+                            ps.depgen[targets[i]] = depGen;
                         }
-                        std::vector<BitVector> u = {oldVal, newVal};
-                        outMap[target] = meetUnion(u);
+                    } else {
+                        for (int i = 0; i < targets.size(); i ++) {
+                            ps.depgen[targets[i]] = prevIn[targetValue]; 
+                            ps.depkill[targets[i]] = prevIn[targets[i]];
+                        }    
                     }
                 }
             }
         }
-
-        return outMap;
+        
+        return ps;
     }
 
-    PreservedAnalyses run(Function& F, FunctionAnalysisManager& AM) {
-        DominatorTree& DT = AM.getResult<DominatorTreeAnalysis>(F);
 
+    PreservedAnalyses run(Function& F, FunctionAnalysisManager& AM) {
         std::vector<Value*> abstractObjects = collectAbstractObjects(F);
+        // outs() << "abstract objects \n";
+        // for (int i = 0; i < abstractObjects.size(); i ++) {
+        //     outs() << *abstractObjects[i] << "\n";
+        // }
 
         DenseMap<const Instruction*, PointState> st;
         std::vector<Instruction*> order;
@@ -456,10 +504,56 @@ struct FlowSensitivePointsTo : PassInfoMixin<FlowSensitivePointsTo> {
         for (int i = 0; i < (int)worklist.size(); i++) {
             Instruction* Ins = worklist[i];
             PointState ps = st[Ins];
-            ps.in = getInSet(Ins, st, abstractObjects.size());
-            DenseMap<Value*, BitVector> newOut = transferFunc(Ins, ps, abstractObjects, DT, F);
-            if (ps.out != newOut) {
-                ps.out = newOut;
+            ps.mustin = getInSet(Ins, st, true);
+            ps.in = getInSet(Ins, st, false);
+
+            PointState newMayPs = transferFunc(Ins, ps, ps.in, abstractObjects);
+            PointState newMustPs = transferFunc(Ins, ps, ps.mustin, abstractObjects);
+
+            std::vector<DenseMap<Value*, BitVector>> unionParams;
+            unionParams.push_back(newMayPs.kill);
+            unionParams.push_back(newMayPs.depkill);
+            DenseMap<Value*, BitVector> killsetMay = mergeDenseMaps(unionParams);
+
+            unionParams.clear();
+            unionParams.push_back(newMustPs.kill);
+            unionParams.push_back(newMustPs.depkill);
+            DenseMap<Value*, BitVector> killsetMust = mergeDenseMaps(unionParams);
+
+            unionParams.clear();
+            unionParams.push_back(newMayPs.gen);
+            unionParams.push_back(newMayPs.depgen);
+            DenseMap<Value*, BitVector> gensetMay = mergeDenseMaps(unionParams);
+
+            unionParams.clear();
+            unionParams.push_back(newMustPs.gen);
+            unionParams.push_back(newMustPs.depgen);
+            DenseMap<Value*, BitVector> gensetMust = mergeDenseMaps(unionParams);
+
+            // kill = kill - gen
+            killsetMay = denseMapSub(killsetMay, gensetMay);
+            killsetMust = denseMapSub(killsetMust, gensetMust);
+
+
+            // mayout (transfer func):
+            newMayPs.out = denseMapSub(ps.in, killsetMust);
+            unionParams.clear();
+            unionParams.push_back(newMayPs.out);
+            unionParams.push_back(gensetMay);
+            newMayPs.out = mergeDenseMaps(unionParams);
+
+
+            //mayin (transfer func):
+            newMustPs.mustout = denseMapSub(ps.mustin, killsetMay);
+            unionParams.clear();
+            unionParams.push_back(newMustPs.mustout);
+            unionParams.push_back(gensetMust);
+            newMustPs.mustout = mergeDenseMaps(unionParams);
+
+
+            if (ps.out != newMayPs.out || ps.mustout != newMustPs.mustout) {
+                ps.out = newMayPs.out;
+                ps.mustout = newMustPs.mustout;
                 std::vector<Instruction*> succInstructions = getSuccessors(Ins, F);
                 for (int j = 0; j < (int)succInstructions.size(); j++) {
                     worklist.push_back(succInstructions[j]);
@@ -472,9 +566,13 @@ struct FlowSensitivePointsTo : PassInfoMixin<FlowSensitivePointsTo> {
         double analysisTimeMs = std::chrono::duration<double, std::milli>(t1 - t0).count();
 
         outs() << "Per-program point point-to sets [flow-sensitive]: \n";
-        for (int j = 0; j < (int)order.size(); j++) {
-            outs() << "Program Point: " << *order[j] << " \n";
-            prettyPrintPointState(outs(), st[order[j]], abstractObjects);
+        for (auto* BB : bbs) {
+            outs() << "Basic Block: " << BB->getName() << " \n";
+            outs() << "IN[] Set: \n";
+            prettyPrintPointState(outs(), st[&BB->front()].in, abstractObjects);
+            outs() << "OUT[] Set: \n";
+            prettyPrintPointState(outs(), st[&BB->back()].out, abstractObjects);
+            outs() << "\n";
         }
 
         reportMetricsPerPoint(outs(), F, order, st, abstractObjects.size(),

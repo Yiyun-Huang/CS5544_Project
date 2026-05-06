@@ -30,3 +30,26 @@ int main()  {
     int x = *r;
     return x + s;
 }
+
+
+// example from KSK textbook page 122
+
+int **a; 
+int *b;
+int *c;
+
+void func2() {
+    int d = 10;
+    b = &d;
+    while (d > 0) {
+        c = b;
+        if (d) {
+            a = &b;
+            *a = a;
+        } else {
+            a = &c;
+        }
+        a = *a;
+        d --;
+    }
+}
