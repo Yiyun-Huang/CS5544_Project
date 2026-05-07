@@ -11,3 +11,7 @@ To start development environment within the container: `docker run --rm -it -v "
 Run `make` in the `/` directory
 
 Run `./run_benchmarks` in the `/tests/` directory
+
+## Viewing Test Results:
+
+All of the log files from our tests are in the `/tests/test_outputs` directory. An aggregation of all of these results as well as test explanations can be found in the `results.md` file.
