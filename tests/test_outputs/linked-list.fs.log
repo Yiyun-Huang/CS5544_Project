@@ -1,0 +1,331 @@
+Per-program point point-to sets [flow-sensitive]: 
+Basic Block: entry 
+IN[] Set: 
+  { }
+OUT[] Set: 
+  { }
+
+
+=== Evaluation Metrics [flow-sensitive] for function 'make_node' ===
+  pointer variables tracked at exit : 0
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 2.716 ms
+  program points analyzed           : 6
+  abstract objects                  : 7
+  worklist iterations               : 6
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Basic Block: entry 
+IN[] Set: 
+  { }
+OUT[] Set: 
+  g_head: { call }
+
+Basic Block: if.then 
+IN[] Set: 
+  g_head: { call }
+OUT[] Set: 
+  g_tail: { call }
+  g_head: { call }
+
+Basic Block: if.end 
+IN[] Set: 
+  g_tail: { call }
+  g_head: { call }
+OUT[] Set: 
+  g_tail: { call }
+  g_head: { call }
+
+
+=== Evaluation Metrics [flow-sensitive] for function 'push_front' ===
+  pointer variables tracked at exit : 2
+  avg points-to set size at exit    : 1.000
+  #may-alias pairs   (any point)    : 1
+  #must-alias pairs  (any point)    : 1
+  analysis time                     : 4.982 ms
+  program points analyzed           : 11
+  abstract objects                  : 8
+  worklist iterations               : 21
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Basic Block: entry 
+IN[] Set: 
+  { }
+OUT[] Set: 
+
+Basic Block: if.then 
+IN[] Set: 
+OUT[] Set: 
+  g_tail: { call }
+  g_head: { call }
+
+Basic Block: if.else 
+IN[] Set: 
+OUT[] Set: 
+  g_tail: { call }
+
+Basic Block: if.end 
+IN[] Set: 
+  g_tail: { call }
+  g_head: { call }
+OUT[] Set: 
+  g_tail: { call }
+  g_head: { call }
+
+
+=== Evaluation Metrics [flow-sensitive] for function 'push_back' ===
+  pointer variables tracked at exit : 2
+  avg points-to set size at exit    : 1.000
+  #may-alias pairs   (any point)    : 1
+  #must-alias pairs  (any point)    : 1
+  analysis time                     : 5.585 ms
+  program points analyzed           : 13
+  abstract objects                  : 9
+  worklist iterations               : 25
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Basic Block: entry 
+IN[] Set: 
+  { }
+OUT[] Set: 
+
+Basic Block: if.then 
+IN[] Set: 
+OUT[] Set: 
+
+Basic Block: if.end 
+IN[] Set: 
+OUT[] Set: 
+  g_head: {  }
+
+Basic Block: return 
+IN[] Set: 
+  g_tail: {  }
+  g_head: {  }
+OUT[] Set: 
+  g_tail: {  }
+  g_head: {  }
+
+Basic Block: if.then2 
+IN[] Set: 
+  g_head: {  }
+OUT[] Set: 
+  g_tail: {  }
+  g_head: {  }
+
+Basic Block: if.end3 
+IN[] Set: 
+  g_tail: {  }
+  g_head: {  }
+OUT[] Set: 
+  g_tail: {  }
+  g_head: {  }
+
+
+=== Evaluation Metrics [flow-sensitive] for function 'pop_front' ===
+  pointer variables tracked at exit : 2
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 15.160 ms
+  program points analyzed           : 19
+  abstract objects                  : 8
+  worklist iterations               : 40
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Basic Block: entry 
+IN[] Set: 
+  { }
+OUT[] Set: 
+
+Basic Block: while.cond 
+IN[] Set: 
+OUT[] Set: 
+
+Basic Block: while.body 
+IN[] Set: 
+OUT[] Set: 
+
+Basic Block: while.end 
+IN[] Set: 
+OUT[] Set: 
+
+Basic Block: if.then 
+IN[] Set: 
+OUT[] Set: 
+
+Basic Block: if.end 
+IN[] Set: 
+OUT[] Set: 
+
+Basic Block: return 
+IN[] Set: 
+OUT[] Set: 
+
+
+=== Evaluation Metrics [flow-sensitive] for function 'find' ===
+  pointer variables tracked at exit : 0
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 5.133 ms
+  program points analyzed           : 16
+  abstract objects                  : 10
+  worklist iterations               : 33
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Basic Block: entry 
+IN[] Set: 
+  { }
+OUT[] Set: 
+
+Basic Block: while.cond 
+IN[] Set: 
+OUT[] Set: 
+
+Basic Block: while.body 
+IN[] Set: 
+OUT[] Set: 
+
+Basic Block: while.end 
+IN[] Set: 
+OUT[] Set: 
+  g_tail: {  }
+  g_head: {  }
+
+
+=== Evaluation Metrics [flow-sensitive] for function 'reverse' ===
+  pointer variables tracked at exit : 2
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 5.042 ms
+  program points analyzed           : 15
+  abstract objects                  : 10
+  worklist iterations               : 30
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Basic Block: entry 
+IN[] Set: 
+  { }
+OUT[] Set: 
+  { }
+
+Basic Block: if.then 
+IN[] Set: 
+  { }
+OUT[] Set: 
+  { }
+
+Basic Block: if.end 
+IN[] Set: 
+  { }
+OUT[] Set: 
+
+Basic Block: if.end3 
+IN[] Set: 
+  g_tail: { other_tail }
+  g_head: { other_head }
+OUT[] Set: 
+  g_tail: { other_tail }
+  g_head: { other_head }
+
+Basic Block: if.then2 
+IN[] Set: 
+OUT[] Set: 
+  g_tail: { other_tail }
+  g_head: { other_head }
+
+Basic Block: if.else 
+IN[] Set: 
+OUT[] Set: 
+  g_tail: { other_tail }
+
+
+=== Evaluation Metrics [flow-sensitive] for function 'append_list' ===
+  pointer variables tracked at exit : 1
+  avg points-to set size at exit    : 1.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 7.235 ms
+  program points analyzed           : 15
+  abstract objects                  : 13
+  worklist iterations               : 27
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Basic Block: entry 
+IN[] Set: 
+  { }
+OUT[] Set: 
+  g_tail: {  }
+  g_head: {  }
+
+Basic Block: if.then 
+IN[] Set: 
+  g_tail: {  }
+  g_head: {  }
+OUT[] Set: 
+  g_tail: {  }
+  g_head: {  }
+
+Basic Block: if.end 
+IN[] Set: 
+  g_tail: {  }
+  g_head: {  }
+OUT[] Set: 
+  g_tail: {  }
+  g_head: {  }
+
+Basic Block: while.cond 
+IN[] Set: 
+  g_tail: {  }
+  g_head: {  }
+OUT[] Set: 
+  g_tail: {  }
+  g_head: {  }
+
+Basic Block: while.body 
+IN[] Set: 
+  g_tail: {  }
+  g_head: {  }
+OUT[] Set: 
+  g_tail: {  }
+  g_head: {  }
+
+Basic Block: while.end 
+IN[] Set: 
+  g_tail: {  }
+  g_head: {  }
+OUT[] Set: 
+  g_tail: {  }
+  g_head: {  }
+
+Basic Block: if.then10 
+IN[] Set: 
+  g_tail: {  }
+  g_head: {  }
+OUT[] Set: 
+  g_tail: {  }
+  g_head: {  }
+
+Basic Block: if.end12 
+IN[] Set: 
+  g_tail: {  }
+  g_head: {  }
+OUT[] Set: 
+  g_tail: {  }
+  g_head: {  }
+
+
+=== Evaluation Metrics [flow-sensitive] for function 'main' ===
+  pointer variables tracked at exit : 2
+  avg points-to set size at exit    : 0.000
+  #may-alias pairs   (any point)    : 0
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 72.837 ms
+  program points analyzed           : 45
+  abstract objects                  : 17
+  worklist iterations               : 92
+============================================

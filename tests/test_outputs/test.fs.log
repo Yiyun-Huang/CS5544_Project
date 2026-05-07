@@ -1,0 +1,43 @@
+Per-program point point-to sets [flow-sensitive]: 
+Basic Block: entry 
+IN[] Set: 
+  { }
+OUT[] Set: 
+  b: { call1 }
+  a: { call2 }
+
+Basic Block: if.then 
+IN[] Set: 
+  b: { call1 }
+  a: { call2 }
+OUT[] Set: 
+  b: { call1 }
+  a: { call1 }
+
+Basic Block: if.else 
+IN[] Set: 
+  b: { call1 }
+  a: { call2 }
+OUT[] Set: 
+  b: { call1 }
+  a: { call3 }
+
+Basic Block: if.end 
+IN[] Set: 
+  b: { call1 }
+  a: { call1; call3 }
+OUT[] Set: 
+  b: { call1 }
+  a: { call1; call3 }
+
+
+=== Evaluation Metrics [flow-sensitive] for function 'main' ===
+  pointer variables tracked at exit : 2
+  avg points-to set size at exit    : 1.500
+  #may-alias pairs   (any point)    : 1
+  #must-alias pairs  (any point)    : 1
+  analysis time                     : 9.618 ms
+  program points analyzed           : 19
+  abstract objects                  : 6
+  worklist iterations               : 37
+============================================

@@ -6,9 +6,9 @@ Function: make_tree_node
   avg points-to set size             : 0.000
   #may-alias pairs                   : 0
   #must-alias pairs                  : 0
-  analysis time                      : 0.019 ms
+  analysis time                      : 0.066 ms
   program points analyzed            : 10
-  abstract objects                   : 2
+  abstract objects                   : 8
   fixpoint iterations                : 1
 ============================================
 Function-level point-to map [flow-insensitive]: 
@@ -20,9 +20,9 @@ Function: tree_insert
   avg points-to set size             : 1.000
   #may-alias pairs                   : 0
   #must-alias pairs                  : 0
-  analysis time                      : 0.030 ms
+  analysis time                      : 0.067 ms
   program points analyzed            : 37
-  abstract objects                   : 2
+  abstract objects                   : 11
   fixpoint iterations                : 3
 ============================================
 Function-level point-to map [flow-insensitive]: 
@@ -33,9 +33,9 @@ Function: tree_find
   avg points-to set size             : 0.000
   #may-alias pairs                   : 0
   #must-alias pairs                  : 0
-  analysis time                      : 0.003 ms
+  analysis time                      : 0.007 ms
   program points analyzed            : 25
-  abstract objects                   : 1
+  abstract objects                   : 13
   fixpoint iterations                : 1
 ============================================
 Function-level point-to map [flow-insensitive]: 
@@ -46,9 +46,9 @@ Function: tree_size
   avg points-to set size             : 0.000
   #may-alias pairs                   : 0
   #must-alias pairs                  : 0
-  analysis time                      : 0.007 ms
+  analysis time                      : 0.018 ms
   program points analyzed            : 46
-  abstract objects                   : 2
+  abstract objects                   : 16
   fixpoint iterations                : 1
 ============================================
 Function-level point-to map [flow-insensitive]: 
@@ -59,9 +59,9 @@ Function: tree_mirror
   avg points-to set size             : 0.000
   #may-alias pairs                   : 0
   #must-alias pairs                  : 0
-  analysis time                      : 0.009 ms
-  program points analyzed            : 51
-  abstract objects                   : 2
+  analysis time                      : 0.025 ms
+  program points analyzed            : 50
+  abstract objects                   : 19
   fixpoint iterations                : 1
 ============================================
 Function-level point-to map [flow-insensitive]: 
@@ -72,9 +72,9 @@ Function: tree_sum_keys
   avg points-to set size             : 0.000
   #may-alias pairs                   : 0
   #must-alias pairs                  : 0
-  analysis time                      : 0.007 ms
+  analysis time                      : 0.019 ms
   program points analyzed            : 48
-  abstract objects                   : 2
+  abstract objects                   : 22
   fixpoint iterations                : 1
 ============================================
 Function-level point-to map [flow-insensitive]: 
@@ -86,9 +86,9 @@ Function: tree_destroy
   avg points-to set size             : 0.000
   #may-alias pairs                   : 0
   #must-alias pairs                  : 0
-  analysis time                      : 0.007 ms
+  analysis time                      : 0.020 ms
   program points analyzed            : 45
-  abstract objects                   : 2
+  abstract objects                   : 25
   fixpoint iterations                : 1
 ============================================
 Function-level point-to map [flow-insensitive]: 
@@ -100,8 +100,8 @@ Function: main
   avg points-to set size             : 0.000
   #may-alias pairs                   : 0
   #must-alias pairs                  : 0
-  analysis time                      : 0.002 ms
+  analysis time                      : 0.006 ms
   program points analyzed            : 33
-  abstract objects                   : 3
+  abstract objects                   : 29
   fixpoint iterations                : 1
 ============================================

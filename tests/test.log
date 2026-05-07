@@ -1,4 +1,0 @@
-Instruction:   %add = add nsw i32 %x, 1
-Instruction:   ret i32 %add
-Instruction:   %call = call i32 (ptr, ...) @printf(ptr noundef @.str, i32 noundef 21)
-Instruction:   ret i32 0

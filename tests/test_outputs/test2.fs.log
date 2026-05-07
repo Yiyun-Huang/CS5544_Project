@@ -1,0 +1,168 @@
+Per-program point point-to sets [flow-sensitive]: 
+Basic Block: entry 
+IN[] Set: 
+  { }
+OUT[] Set: 
+  r: { call2 }
+  p: { call1 }
+  q: { call2 }
+
+Basic Block: if.then 
+IN[] Set: 
+  r: { call2 }
+  p: { call1 }
+  q: { call2 }
+OUT[] Set: 
+  r: { call2 }
+  p: { call2 }
+  q: { call2 }
+
+Basic Block: if.else 
+IN[] Set: 
+  r: { call2 }
+  p: { call1 }
+  q: { call2 }
+OUT[] Set: 
+  r: { call2 }
+  p: { call3 }
+  q: { call2 }
+
+Basic Block: if.end 
+IN[] Set: 
+  r: { call2 }
+  p: { call2; call3 }
+  q: { call2 }
+OUT[] Set: 
+  r: { call2 }
+  p: { call2; call3 }
+  q: { call2 }
+
+Basic Block: if.then5 
+IN[] Set: 
+  r: { call2 }
+  p: { call2; call3 }
+  q: { call2 }
+OUT[] Set: 
+  r: { call2 }
+  p: { call2 }
+  q: { call2 }
+
+Basic Block: if.end6 
+IN[] Set: 
+  r: { call2 }
+  p: { call2; call3 }
+  q: { call2 }
+OUT[] Set: 
+  r: { call2 }
+  p: { call2; call3 }
+  q: { call2 }
+
+Basic Block: if.then8 
+IN[] Set: 
+  r: { call2 }
+  p: { call2; call3 }
+  q: { call2 }
+OUT[] Set: 
+  r: { call2; call3 }
+  p: { call2; call3 }
+  q: { call2 }
+
+Basic Block: if.end9 
+IN[] Set: 
+  r: { call2; call3 }
+  p: { call2; call3 }
+  q: { call2 }
+OUT[] Set: 
+  r: { call2; call3 }
+  p: { call2; call3 }
+  q: { call2 }
+
+
+=== Evaluation Metrics [flow-sensitive] for function 'main' ===
+  pointer variables tracked at exit : 3
+  avg points-to set size at exit    : 1.667
+  #may-alias pairs   (any point)    : 3
+  #must-alias pairs  (any point)    : 3
+  analysis time                     : 33.595 ms
+  program points analyzed           : 34
+  abstract objects                  : 10
+  worklist iterations               : 69
+============================================
+Per-program point point-to sets [flow-sensitive]: 
+Basic Block: entry 
+IN[] Set: 
+  { }
+OUT[] Set: 
+  b: { d }
+
+Basic Block: while.cond 
+IN[] Set: 
+  a: { d; b }
+  b: { d; b }
+  c: { d; b }
+OUT[] Set: 
+  a: { d; b }
+  b: { d; b }
+  c: { d; b }
+
+Basic Block: while.body 
+IN[] Set: 
+  a: { d; b }
+  b: { d; b }
+  c: { d; b }
+OUT[] Set: 
+  a: { d; b }
+  b: { d; b }
+  c: { d; b }
+
+Basic Block: while.end 
+IN[] Set: 
+  a: { d; b }
+  b: { d; b }
+  c: { d; b }
+OUT[] Set: 
+  a: { d; b }
+  b: { d; b }
+  c: { d; b }
+
+Basic Block: if.then 
+IN[] Set: 
+  a: { d; b }
+  b: { d; b }
+  c: { d; b }
+OUT[] Set: 
+  a: { b }
+  b: { d; b }
+  c: { d; b }
+
+Basic Block: if.else 
+IN[] Set: 
+  a: { d; b }
+  b: { d; b }
+  c: { d; b }
+OUT[] Set: 
+  a: { c }
+  b: { d; b }
+  c: { d; b }
+
+Basic Block: if.end 
+IN[] Set: 
+  a: { b; c }
+  b: { d; b }
+  c: { d; b }
+OUT[] Set: 
+  a: { d; b }
+  b: { d; b }
+  c: { d; b }
+
+
+=== Evaluation Metrics [flow-sensitive] for function 'func2' ===
+  pointer variables tracked at exit : 3
+  avg points-to set size at exit    : 2.000
+  #may-alias pairs   (any point)    : 3
+  #must-alias pairs  (any point)    : 0
+  analysis time                     : 30.090 ms
+  program points analyzed           : 27
+  abstract objects                  : 7
+  worklist iterations               : 82
+============================================

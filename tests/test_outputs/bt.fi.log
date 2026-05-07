@@ -1,0 +1,364 @@
+Function-level point-to map [flow-insensitive]: 
+Function: main
+
+=== Evaluation Metrics [flow-insensitive] for function 'main' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.041 ms
+  program points analyzed            : 117
+  abstract objects                   : 6
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: set_constants
+
+=== Evaluation Metrics [flow-insensitive] for function 'set_constants' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.051 ms
+  program points analyzed            : 426
+  abstract objects                   : 0
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: initialize
+
+=== Evaluation Metrics [flow-insensitive] for function 'initialize' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.048 ms
+  program points analyzed            : 441
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: lhsinit
+
+=== Evaluation Metrics [flow-insensitive] for function 'lhsinit' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.016 ms
+  program points analyzed            : 118
+  abstract objects                   : 0
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: exact_rhs
+
+=== Evaluation Metrics [flow-insensitive] for function 'exact_rhs' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.234 ms
+  program points analyzed            : 2513
+  abstract objects                   : 1
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: adi
+
+=== Evaluation Metrics [flow-insensitive] for function 'adi' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.001 ms
+  program points analyzed            : 6
+  abstract objects                   : 0
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: verify
+
+=== Evaluation Metrics [flow-insensitive] for function 'verify' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.045 ms
+  program points analyzed            : 395
+  abstract objects                   : 9
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: compute_rhs
+
+=== Evaluation Metrics [flow-insensitive] for function 'compute_rhs' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.293 ms
+  program points analyzed            : 3441
+  abstract objects                   : 0
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: x_solve
+
+=== Evaluation Metrics [flow-insensitive] for function 'x_solve' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.002 ms
+  program points analyzed            : 4
+  abstract objects                   : 0
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: y_solve
+
+=== Evaluation Metrics [flow-insensitive] for function 'y_solve' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.002 ms
+  program points analyzed            : 4
+  abstract objects                   : 0
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: z_solve
+
+=== Evaluation Metrics [flow-insensitive] for function 'z_solve' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.002 ms
+  program points analyzed            : 4
+  abstract objects                   : 0
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: add
+
+=== Evaluation Metrics [flow-insensitive] for function 'add' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.010 ms
+  program points analyzed            : 63
+  abstract objects                   : 0
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: lhsx
+
+=== Evaluation Metrics [flow-insensitive] for function 'lhsx' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.305 ms
+  program points analyzed            : 3491
+  abstract objects                   : 0
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: x_solve_cell
+
+=== Evaluation Metrics [flow-insensitive] for function 'x_solve_cell' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.022 ms
+  program points analyzed            : 222
+  abstract objects                   : 0
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: x_backsubstitute
+
+=== Evaluation Metrics [flow-insensitive] for function 'x_backsubstitute' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.010 ms
+  program points analyzed            : 84
+  abstract objects                   : 0
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: binvcrhs
+
+=== Evaluation Metrics [flow-insensitive] for function 'binvcrhs' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.188 ms
+  program points analyzed            : 2051
+  abstract objects                   : 3
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: matvec_sub
+
+=== Evaluation Metrics [flow-insensitive] for function 'matvec_sub' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.007 ms
+  program points analyzed            : 54
+  abstract objects                   : 3
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: matmul_sub
+
+=== Evaluation Metrics [flow-insensitive] for function 'matmul_sub' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.026 ms
+  program points analyzed            : 273
+  abstract objects                   : 3
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: binvrhs
+
+=== Evaluation Metrics [flow-insensitive] for function 'binvrhs' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.071 ms
+  program points analyzed            : 776
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: lhsy
+
+=== Evaluation Metrics [flow-insensitive] for function 'lhsy' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.306 ms
+  program points analyzed            : 3502
+  abstract objects                   : 0
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: y_solve_cell
+
+=== Evaluation Metrics [flow-insensitive] for function 'y_solve_cell' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.024 ms
+  program points analyzed            : 225
+  abstract objects                   : 0
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: y_backsubstitute
+
+=== Evaluation Metrics [flow-insensitive] for function 'y_backsubstitute' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.012 ms
+  program points analyzed            : 84
+  abstract objects                   : 0
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: lhsz
+
+=== Evaluation Metrics [flow-insensitive] for function 'lhsz' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.524 ms
+  program points analyzed            : 3504
+  abstract objects                   : 0
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: z_solve_cell
+
+=== Evaluation Metrics [flow-insensitive] for function 'z_solve_cell' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.023 ms
+  program points analyzed            : 225
+  abstract objects                   : 0
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: z_backsubstitute
+
+=== Evaluation Metrics [flow-insensitive] for function 'z_backsubstitute' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.012 ms
+  program points analyzed            : 84
+  abstract objects                   : 0
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: exact_solution
+
+=== Evaluation Metrics [flow-insensitive] for function 'exact_solution' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.008 ms
+  program points analyzed            : 75
+  abstract objects                   : 4
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: error_norm
+
+=== Evaluation Metrics [flow-insensitive] for function 'error_norm' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.012 ms
+  program points analyzed            : 107
+  abstract objects                   : 2
+  fixpoint iterations                : 1
+============================================
+Function-level point-to map [flow-insensitive]: 
+Function: rhs_norm
+
+=== Evaluation Metrics [flow-insensitive] for function 'rhs_norm' ===
+  pointer variables tracked          : 0
+  avg points-to set size             : 0.000
+  #may-alias pairs                   : 0
+  #must-alias pairs                  : 0
+  analysis time                      : 0.011 ms
+  program points analyzed            : 94
+  abstract objects                   : 1
+  fixpoint iterations                : 1
+============================================

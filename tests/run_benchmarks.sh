@@ -29,11 +29,11 @@ run_bench () {
   local src=$1
   local name="${src%.c}"
   local bc="/opt/${name}.bc"
-  local bc_pre="${name}-pre.bc"
-  local bc_post_fs="${name}-fs-post.bc"
-  local bc_post_fi="${name}-fi-post.bc"
-  local log_fs="${name}.fs.log"
-  local log_fi="${name}.fi.log"
+  local bc_pre="/opt/${name}-pre.bc"
+  local bc_post_fs="/opt/${name}-fs-post.bc"
+  local bc_post_fi="/opt/${name}-fi-post.bc"
+  local log_fs="test_outputs/${name}.fs.log"
+  local log_fi="test_outputs/${name}.fi.log"
 
   printf '\n========================================================\n'
   printf 'Benchmark: %s\n' "$name"
@@ -64,3 +64,4 @@ run_bench test2.c
 # ---- macro-benchmarks ------------------------------------------------------
 run_bench linked-list.c
 run_bench tree-ops.c
+run_bench bt.c

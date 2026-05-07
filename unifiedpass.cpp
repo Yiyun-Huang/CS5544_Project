@@ -127,7 +127,7 @@ static std::vector<Value*> collectAbstractObjects(Function& F) {
             if (auto* Alloca = dyn_cast<AllocaInst>(&I)) {
                 abstractObjects.push_back(Alloca);
             }
-            if (auto* Call = dyn_cast<CallInst>(&I)) {
+            if (auto *Call = dyn_cast<CallInst>(&I)) {
                 if (Call->getType()->isPointerTy())
                     abstractObjects.push_back(Call);
             }
@@ -137,6 +137,43 @@ static std::vector<Value*> collectAbstractObjects(Function& F) {
     for (auto& G : M->globals()) {
         if (G.getValueType()->isPointerTy()) {
             abstractObjects.push_back(&G);
+        }
+    }
+    for (Argument &Arg : F.args()) {
+        abstractObjects.push_back(&Arg);
+    }
+    for (StructType *ST : M->getIdentifiedStructTypes()) {
+        if (!ST->isOpaque()) {
+
+            // Represent struct type as a synthetic object
+            GlobalVariable *StructObj =
+                new GlobalVariable(
+                    *M,
+                    ST,
+                    false,
+                    GlobalValue::ExternalLinkage,
+                    nullptr,
+                    "ALOC_struct_" + ST->getName()
+                );
+
+            abstractObjects.push_back(StructObj);
+
+            // Represent each struct field as an abstract location
+            for (unsigned i = 0; i < ST->getNumElements(); i++) {
+
+                // create a separate abstract location per field
+                GlobalVariable *FieldObj =
+                    new GlobalVariable(
+                        *M,
+                        ST->getElementType(i),
+                        false,
+                        GlobalValue::ExternalLinkage,
+                        nullptr,
+                        "ALOC_struct_" + ST->getName() + "_field_" + std::to_string(i)
+                    );
+
+                abstractObjects.push_back(FieldObj);
+            }
         }
     }
     return abstractObjects;
@@ -300,6 +337,7 @@ static void reportMetricsSingle(raw_ostream& OS,
 }
 
 
+
 // =============================================================================
 // Pass 1: flow-sensitive points-to analysis
 // =============================================================================
@@ -406,7 +444,6 @@ struct FlowSensitivePointsTo : PassInfoMixin<FlowSensitivePointsTo> {
         BitVector constGen(abstractObjects.size(), false); 
         BitVector depGen(abstractObjects.size(), false); 
         BitVector constKill(abstractObjects.size(), true); 
-        // BitVector depKill(abstractObjects.size(), false); 
         if (auto* Load = dyn_cast<LoadInst>(Ins)) {
             if (Load->getType()->isPointerTy()) {
                 Value* pointerOperand = Load->getPointerOperand();
@@ -423,7 +460,7 @@ struct FlowSensitivePointsTo : PassInfoMixin<FlowSensitivePointsTo> {
                     }
                 }
             }
-        }
+        } 
         // Stores of a pointer value
         else if (auto* Store = dyn_cast<StoreInst>(Ins)) {
             if (Store->getValueOperand()->getType()->isPointerTy()) {
@@ -436,14 +473,24 @@ struct FlowSensitivePointsTo : PassInfoMixin<FlowSensitivePointsTo> {
                 bool pointerOperandIsAloc = it2 != abstractObjects.end() && *it2 == pointerOperand;
 
                 // CONSTGEN (stores in the form x = where x is a pointer var (not a pointer indirection))
-
                 if (pointerOperandIsAloc) {
                     if (targetIsAloc) {
                         // a = &x
                         constGen.set(static_cast<unsigned>(it - abstractObjects.begin()));
                     } else {
                         // a = b
-                        constGen = prevIn[targetValue];  // pointer will point to everything that the targetValue currently points to
+                        // pointer will point to everything that the targetValue currently points to. if multiple possible targetValues, merge them
+                       if (auto *PN = dyn_cast<PHINode>(targetValue)) {
+                            // weak update (merging)
+                            std::vector<BitVector> incomingValuesUnionParams;
+                            for (unsigned i = 0; i < PN->getNumIncomingValues(); i++) {
+                                Value *incomingValue = PN->getIncomingValue(i);
+                                incomingValuesUnionParams.push_back(prevIn[incomingValue]);
+                            }
+                            constGen = meetUnion(incomingValuesUnionParams);
+                        } else {
+                            constGen = prevIn[targetValue]; // singleton detection -- strong update
+                        }
                     }
 
                     ps.gen[pointerOperand] = constGen;
@@ -484,11 +531,6 @@ struct FlowSensitivePointsTo : PassInfoMixin<FlowSensitivePointsTo> {
 
     PreservedAnalyses run(Function& F, FunctionAnalysisManager& AM) {
         std::vector<Value*> abstractObjects = collectAbstractObjects(F);
-        // outs() << "abstract objects \n";
-        // for (int i = 0; i < abstractObjects.size(); i ++) {
-        //     outs() << *abstractObjects[i] << "\n";
-        // }
-
         DenseMap<const Instruction*, PointState> st;
         std::vector<Instruction*> order;
         std::vector<BasicBlock*> bbs;
