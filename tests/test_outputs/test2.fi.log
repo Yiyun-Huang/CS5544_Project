@@ -1,32 +1,32 @@
 Function-level point-to map [flow-insensitive]: 
 Function: main
+  p: { call; call1; call2; call3 }
   q: { call; call1; call2; call3 }
   r: { call; call1; call2; call3 }
-  p: { call; call1; call2; call3 }
 
 === Evaluation Metrics [flow-insensitive] for function 'main' ===
   pointer variables tracked          : 3
   avg points-to set size             : 4.000
   #may-alias pairs                   : 3
   #must-alias pairs                  : 0
-  analysis time                      : 0.193 ms
+  analysis time                      : 0.180 ms
   program points analyzed            : 34
   abstract objects                   : 10
   fixpoint iterations                : 4
 ============================================
 Function-level point-to map [flow-insensitive]: 
 Function: func2
-  d: { d; b; c }
-  b: { d; b; c }
   c: { d; b; c }
+  b: { d; b; c }
   a: { d; b; c }
+  d: { d; b; c }
 
 === Evaluation Metrics [flow-insensitive] for function 'func2' ===
   pointer variables tracked          : 4
   avg points-to set size             : 3.000
   #may-alias pairs                   : 6
   #must-alias pairs                  : 0
-  analysis time                      : 0.063 ms
+  analysis time                      : 0.064 ms
   program points analyzed            : 27
   abstract objects                   : 7
   fixpoint iterations                : 4

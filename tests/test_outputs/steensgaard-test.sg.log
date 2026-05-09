@@ -1,0 +1,6 @@
+=== Steensgaard Equivalence Classes ===
+Class #0: { y7, x5, w9, y6, x6, w10, y9, x7, w7, y8, x8, w8, f6, w5, f5, w6, x3, y5, x4, y4, w4, z2, w, x13, k6, z3, y14, x14, x, z, w2, y, z1, w1, y1, w13, x9, y11, w14, x10, y10, w11, x11, y13, w12, x12, y12, k12, z9, f13, k13, z8, f14, k10, z11, k, k11, z10, k1, x1, y3, k2, k8, y2, k3, k9, z7, w3, z5, k4, z6, k5, z4, k7, f2, f1, f4, f7, f3, f8, z13, f9, x2, z12, f10, f, f11, k14, z14, f12 }
+Class #1: { q } -> pts -> { y7, x5, w9, y6, x6, w10, y9, x7, w7, y8, x8, w8, f6, w5, f5, w6, x3, y5, x4, y4, w4, z2, w, x13, k6, z3, y14, x14, x, z, w2, y, z1, w1, y1, w13, x9, y11, w14, x10, y10, w11, x11, y13, w12, x12, y12, k12, z9, f13, k13, z8, f14, k10, z11, k, k11, z10, k1, x1, y3, k2, k8, y2, k3, k9, z7, w3, z5, k4, z6, k5, z4, k7, f2, f1, f4, f7, f3, f8, z13, f9, x2, z12, f10, f, f11, k14, z14, f12 }
+Class #2: { p } -> pts -> { c, b, a }
+Class #3: { c, b, a } -> pts -> { y7, x5, w9, y6, x6, w10, y9, x7, w7, y8, x8, w8, f6, w5, f5, w6, x3, y5, x4, y4, w4, z2, w, x13, k6, z3, y14, x14, x, z, w2, y, z1, w1, y1, w13, x9, y11, w14, x10, y10, w11, x11, y13, w12, x12, y12, k12, z9, f13, k13, z8, f14, k10, z11, k, k11, z10, k1, x1, y3, k2, k8, y2, k3, k9, z7, w3, z5, k4, z6, k5, z4, k7, f2, f1, f4, f7, f3, f8, z13, f9, x2, z12, f10, f, f11, k14, z14, f12 }
+Time: 0.155 ms

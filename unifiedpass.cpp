@@ -71,6 +71,7 @@ void prettyPrintPointState(raw_ostream& OS, DenseMap<Value*, BitVector> dfaValue
     }
 }
 
+
 void prettyPrintMap(raw_ostream& OS, const DenseMap<Value*, BitVector>& m,
                     const std::vector<Value*>& abstractObjects) {
     for (auto& [key, value] : m) {
@@ -137,43 +138,6 @@ static std::vector<Value*> collectAbstractObjects(Function& F) {
     for (auto& G : M->globals()) {
         if (G.getValueType()->isPointerTy()) {
             abstractObjects.push_back(&G);
-        }
-    }
-    for (Argument &Arg : F.args()) {
-        abstractObjects.push_back(&Arg);
-    }
-    for (StructType *ST : M->getIdentifiedStructTypes()) {
-        if (!ST->isOpaque()) {
-
-            // Represent struct type as a synthetic object
-            GlobalVariable *StructObj =
-                new GlobalVariable(
-                    *M,
-                    ST,
-                    false,
-                    GlobalValue::ExternalLinkage,
-                    nullptr,
-                    "ALOC_struct_" + ST->getName()
-                );
-
-            abstractObjects.push_back(StructObj);
-
-            // Represent each struct field as an abstract location
-            for (unsigned i = 0; i < ST->getNumElements(); i++) {
-
-                // create a separate abstract location per field
-                GlobalVariable *FieldObj =
-                    new GlobalVariable(
-                        *M,
-                        ST->getElementType(i),
-                        false,
-                        GlobalValue::ExternalLinkage,
-                        nullptr,
-                        "ALOC_struct_" + ST->getName() + "_field_" + std::to_string(i)
-                    );
-
-                abstractObjects.push_back(FieldObj);
-            }
         }
     }
     return abstractObjects;
@@ -731,7 +695,6 @@ struct FlowInsensitivePointsTo : PassInfoMixin<FlowInsensitivePointsTo> {
 
     PreservedAnalyses run(Function& F, FunctionAnalysisManager& /*AM*/) {
         std::vector<Value*> abstractObjects = collectAbstractObjects(F);
-
         // Count program points up front for parity with flow-sensitive metrics.
         std::size_t numProgramPoints = 0;
         for (auto& BB : F) numProgramPoints += BB.size();
@@ -764,6 +727,157 @@ struct FlowInsensitivePointsTo : PassInfoMixin<FlowInsensitivePointsTo> {
     }
 };
 
+// =============================================================================
+// Pass 3: flow-insensitive Steensgaard Algorithm
+//
+// Store points to information in equivalence classes. Pointers now map
+// to an equivalence class instead of a set of abstract locations. 
+// =============================================================================
+struct Steensgaard : PassInfoMixin<Steensgaard> {
+    // Stores an element in the union-find data structure
+    struct Node {
+        Node* parent = this;    // the parent of this node in the union-find tree
+        Node* pts = nullptr;    // the equivalence class that this node points to
+    };
+
+    // Union-find data structure used to store/update equivalence class relations
+    struct UnionFind {
+        DenseMap<Value*, Node*> nodes;
+
+        // Get the node correspinding to LLVM value v
+        Node* get(Value* v) {
+            auto it = nodes.find(v);
+            if (it != nodes.end())
+                return it->second;
+
+            Node* N = new Node();
+            nodes[v] = N;
+            return N;
+        }
+
+        // Find the parent of the node n in the union-find structure
+        Node* find(Node* n) {
+            if (n->parent != n)
+                n->parent = find(n->parent);
+            return n->parent;
+        }
+
+        // Merge two equivalence classes
+        void unify(Node* a, Node* b) {
+            if (!a || !b) return;
+
+            a = find(a);
+            b = find(b);
+
+            if (a == b) return;
+
+            b->parent = a;
+
+            // if both equivalence classes point to other equivalence classes, 
+            // need to merge those two other equivalence classes
+            if (a->pts && b->pts)
+                unify(a->pts, b->pts);
+            else if (!a->pts)
+                a->pts = b->pts;    // copy the equivalence class
+        }
+    };
+
+    // A helper function to display the points-to relations from 
+    // the union-find structure
+    void prettyPrintUnionFindRelation(raw_ostream& OS, UnionFind uf) {
+        DenseMap<Node*, std::vector<Value*>> classes;
+
+        for (auto& [V, N] : uf.nodes) {
+            Node* Rep = uf.find(N);
+            classes[Rep].push_back(V);
+        }
+
+        outs() << "=== Steensgaard Equivalence Classes ===\n";
+        unsigned classNumber = 0;
+
+        for (auto& [Rep, Members] : classes) {
+            outs() << "Class #" << classNumber++ << ": { ";
+            bool first = true;
+            for (Value* V : Members) {
+                if (V->getName() == "") continue;
+                if (!first) OS << ", ";
+                first = false;
+                OS << V->getName();
+            }
+            OS << " }";
+
+            // prints what the equivalence class points to
+            if (Rep->pts) {
+                Node* PtsRep = uf.find(Rep->pts);
+                OS << " -> pts -> { ";
+
+                bool firstPts = true;
+
+                for (auto& [V2, N2] : uf.nodes) {
+                    if (!V2->hasName()) continue;
+                    if (uf.find(N2) != PtsRep) continue;
+                    if (!firstPts) OS << ", ";
+                    firstPts = false;
+                    OS << V2->getName();
+                }
+                OS << " }";
+            }
+            OS << "\n";
+        }
+    }
+
+    PreservedAnalyses run(Function& F, FunctionAnalysisManager&) {
+        UnionFind uf;
+
+        auto t0 = std::chrono::high_resolution_clock::now();
+
+        for (auto& BB : F) {
+            for (auto& I : BB) {
+                if (auto* Load = dyn_cast<LoadInst>(&I)) {
+                    if (!Load->getType()->isPointerTy()) continue;
+                    // p = *q  => x == pts(p)
+                    Value* p = Load->getPointerOperand();
+
+                    Node* x = uf.get(Load);
+                    Node* PNode = uf.get(p);
+
+                    if (!PNode->pts)
+                        PNode->pts = new Node();
+
+                    // union x with pts(p)
+                    uf.unify(x, PNode->pts);
+                }
+                else if (auto* Store = dyn_cast<StoreInst>(&I)) {
+                    if (!Store->getValueOperand()->getType()->isPointerTy()) continue;
+                    Value* v = Store->getValueOperand();
+                    Value* p = Store->getPointerOperand();
+
+                    Node* VN = uf.get(v);
+                    Node* PN = uf.get(p);
+
+                    // *p = v
+                    if (!PN->pts)
+                        PN->pts = VN;
+                    else
+                        uf.unify(PN->pts, VN);
+                }                
+            }
+        }
+
+        auto t1 = std::chrono::high_resolution_clock::now();
+
+        double analysisTimeMs = std::chrono::duration<double, std::milli>(t1 - t0).count();
+
+        prettyPrintUnionFindRelation(outs(), uf);
+
+        outs() << "Time: "
+               << format("%.3f", analysisTimeMs)
+               << " ms\n";
+
+        return PreservedAnalyses::all();
+    }
+};
+
 } // end namespace
 
 
@@ -786,6 +900,10 @@ extern "C" LLVM_ATTRIBUTE_WEAK PassPluginLibraryInfo llvmGetPassPluginInfo() {
                         }
                         if (Name == "flow-insensitive-points-to-analysis") {
                             FPM.addPass(FlowInsensitivePointsTo());
+                            return true;
+                        }
+                        if (Name == "steensgaard") {
+                            FPM.addPass(Steensgaard());
                             return true;
                         }
                         return false;

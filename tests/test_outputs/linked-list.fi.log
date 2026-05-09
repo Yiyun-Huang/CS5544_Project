@@ -6,9 +6,9 @@ Function: make_node
   avg points-to set size             : 0.000
   #may-alias pairs                   : 0
   #must-alias pairs                  : 0
-  analysis time                      : 0.117 ms
+  analysis time                      : 0.057 ms
   program points analyzed            : 6
-  abstract objects                   : 7
+  abstract objects                   : 3
   fixpoint iterations                : 1
 ============================================
 Function-level point-to map [flow-insensitive]: 
@@ -21,9 +21,9 @@ Function: push_front
   avg points-to set size             : 1.000
   #may-alias pairs                   : 1
   #must-alias pairs                  : 1
-  analysis time                      : 0.076 ms
+  analysis time                      : 0.052 ms
   program points analyzed            : 11
-  abstract objects                   : 8
+  abstract objects                   : 3
   fixpoint iterations                : 3
 ============================================
 Function-level point-to map [flow-insensitive]: 
@@ -36,9 +36,9 @@ Function: push_back
   avg points-to set size             : 1.000
   #may-alias pairs                   : 1
   #must-alias pairs                  : 1
-  analysis time                      : 0.031 ms
+  analysis time                      : 0.050 ms
   program points analyzed            : 13
-  abstract objects                   : 9
+  abstract objects                   : 3
   fixpoint iterations                : 3
 ============================================
 Function-level point-to map [flow-insensitive]: 
@@ -51,9 +51,9 @@ Function: pop_front
   avg points-to set size             : 0.000
   #may-alias pairs                   : 0
   #must-alias pairs                  : 0
-  analysis time                      : 0.017 ms
+  analysis time                      : 0.012 ms
   program points analyzed            : 19
-  abstract objects                   : 8
+  abstract objects                   : 2
   fixpoint iterations                : 1
 ============================================
 Function-level point-to map [flow-insensitive]: 
@@ -64,9 +64,9 @@ Function: find
   avg points-to set size             : 0.000
   #may-alias pairs                   : 0
   #must-alias pairs                  : 0
-  analysis time                      : 0.007 ms
+  analysis time                      : 0.004 ms
   program points analyzed            : 16
-  abstract objects                   : 10
+  abstract objects                   : 2
   fixpoint iterations                : 1
 ============================================
 Function-level point-to map [flow-insensitive]: 
@@ -79,25 +79,25 @@ Function: reverse
   avg points-to set size             : 0.000
   #may-alias pairs                   : 0
   #must-alias pairs                  : 0
-  analysis time                      : 0.013 ms
+  analysis time                      : 0.011 ms
   program points analyzed            : 15
-  abstract objects                   : 10
+  abstract objects                   : 2
   fixpoint iterations                : 1
 ============================================
 Function-level point-to map [flow-insensitive]: 
 Function: append_list
-  g_tail: { other_tail }
-  g_head: { other_head }
+  g_tail: {  }
+  g_head: {  }
 
 === Evaluation Metrics [flow-insensitive] for function 'append_list' ===
   pointer variables tracked          : 2
-  avg points-to set size             : 1.000
+  avg points-to set size             : 0.000
   #may-alias pairs                   : 0
   #must-alias pairs                  : 0
-  analysis time                      : 0.036 ms
+  analysis time                      : 0.008 ms
   program points analyzed            : 15
-  abstract objects                   : 13
-  fixpoint iterations                : 3
+  abstract objects                   : 2
+  fixpoint iterations                : 1
 ============================================
 Function-level point-to map [flow-insensitive]: 
 Function: main
@@ -109,8 +109,8 @@ Function: main
   avg points-to set size             : 0.000
   #may-alias pairs                   : 0
   #must-alias pairs                  : 0
-  analysis time                      : 0.018 ms
+  analysis time                      : 0.011 ms
   program points analyzed            : 45
-  abstract objects                   : 17
+  abstract objects                   : 7
   fixpoint iterations                : 1
 ============================================

@@ -273,21 +273,42 @@ Note: in test output log files, these metrics are reported per-function. Here th
 | program points analyzed   | 140 | 
 | abstract objects  | 82 | 
 
-## bt.c (NPB)
-NBP benchmark taken from [Here](https://benchmark-subsetting.github.io/cNPB/)
 
-**Evaluation Metrics [flow-sensitive]**
+## Steensgaard tests:
 
-| Metric | Value |
-| -------- | -------- |
-| analysis time   | 21142.143 ms | 
-| program points analyzed   | 22383 | 
-| abstract objects  | 30 | 
+### steensgaard-test.c
+**Test description**: This test represents a pathological example and is meant to demonstrate the speedup that the Steensgaard algorithm provides when compared to the Andersen algorithm. This test mirrors the example on slide 20 of the Lecutre 14 Handwritten notes. 
 
-**Evaluation Metrics [flow-insensitive]**
+Metrics to compare: 
 
-| Metric | Value |
-| -------- | -------- |
-| analysis time   | 2.306 ms | 
-| program points analyzed   | 22383 | 
-| abstract objects  | 30 | 
+Averaging the analysis time over five runs, 
+Steensgaard: 0.2242 ms
+Andersen: 0.6906 ms
+
+
+### steensgaard-accuracy-test.c
+**Test description**: This test compares the accuracy of Steensgaard to Andersen and our Flow Sensitive analysis.
+
+Flow Sensitive output: 
+  s: { e }
+  r: { d }
+  q: { c }
+  p: { b }
+  t: { e }
+
+Flow Insensitive output: 
+  p: { a; b; c; d; e }
+  t: { e }
+  q: { b; c; d; e }
+  r: { c; d; e }
+  s: { d; e }
+
+Steensgaard output: 
+Class #0: { t } -> pts -> { d, a, e, c, b }
+Class #1: { s } -> pts -> { d, a, e, c, b }
+Class #2: { r } -> pts -> { d, a, e, c, b }
+Class #3: { q } -> pts -> { d, a, e, c, b }
+Class #4: { p } -> pts -> { d, a, e, c, b }
+
+
+As you can see, Steensgaard is the least accurate of the three analyses.

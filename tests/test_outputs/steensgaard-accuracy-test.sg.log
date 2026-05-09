@@ -1,0 +1,8 @@
+=== Steensgaard Equivalence Classes ===
+Class #0: { p } -> pts -> { b, e, d, a, c }
+Class #1: { b, e, d, a, c }
+Class #2: { t } -> pts -> { b, e, d, a, c }
+Class #3: { s } -> pts -> { b, e, d, a, c }
+Class #4: { r } -> pts -> { b, e, d, a, c }
+Class #5: { q } -> pts -> { b, e, d, a, c }
+Time: 0.094 ms

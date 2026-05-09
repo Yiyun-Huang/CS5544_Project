@@ -30,10 +30,11 @@ run_bench () {
   local name="${src%.c}"
   local bc="/opt/${name}.bc"
   local bc_pre="/opt/${name}-pre.bc"
-  local bc_post_fs="/opt/${name}-fs-post.bc"
+  local bc_post_fs="$/opt/{name}-fs-post.bc"
   local bc_post_fi="/opt/${name}-fi-post.bc"
   local log_fs="test_outputs/${name}.fs.log"
   local log_fi="test_outputs/${name}.fi.log"
+  local log_sg="test_outputs/${name}.sg.log"
 
   printf '\n========================================================\n'
   printf 'Benchmark: %s\n' "$name"
@@ -53,6 +54,11 @@ run_bench () {
   opt -bugpoint-enable-legacy-pm=1 -load-pass-plugin="$PLUGIN" \
        -passes='flow-insensitive-points-to-analysis' \
        "$bc_pre" -o "$bc_post_fi" 2>&1 | tee "$log_fi"
+
+  printf '\n---- steensgaard ----\n'
+  opt -bugpoint-enable-legacy-pm=1 -load-pass-plugin="$PLUGIN" \
+       -passes='steensgaard' \
+       "$bc_pre" -o "$bc_post_fi" 2>&1 | tee "$log_sg"
 }
 
 # ---- micro-benchmarks ------------------------------------------------------
@@ -60,8 +66,9 @@ run_bench complex-pointer-types.c
 run_bench iterative-example.c
 run_bench test.c
 run_bench test2.c
+run_bench steensgaard-test.c
+run_bench steensgaard-accuracy-test.c
 
 # ---- macro-benchmarks ------------------------------------------------------
 run_bench linked-list.c
 run_bench tree-ops.c
-run_bench bt.c

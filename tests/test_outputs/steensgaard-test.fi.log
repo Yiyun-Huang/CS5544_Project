@@ -1,0 +1,18 @@
+Function-level point-to map [flow-insensitive]: 
+Function: main
+  a: { x; x1; x2; x3; x4; y; y1; y2; y3; y4; w; w1; w2; w3; w4; z; z1; z2; z3; z4; f; f1; f2; f3; f4; k; k1; k2; k3; k4 }
+  q: { x; x1; x2; x3; x4; x5; x6; x7; x8; x9; x10; x11; x12; x13; x14; y; y1; y2; y3; y4; y5; y6; y7; y8; y9; y10; y11; y12; y13; y14; w; w1; w2; w3; w4; w5; w6; w7; w8; w9; w10; w11; w12; w13; w14; z; z1; z2; z3; z4; z5; z6; z7; z8; z9; z10; z11; z12; z13; z14; f; f1; f2; f3; f4; f5; f6; f7; f8; f9; f10; f11; f12; f13; f14; k; k1; k2; k3; k4; k5; k6; k7; k8; k9; k10; k11; k12; k13; k14 }
+  b: { x5; x6; x7; x8; x9; y5; y6; y7; y8; y9; w5; w6; w7; w8; w9; z5; z6; z7; z8; z9; f5; f6; f7; f8; f9; k5; k6; k7; k8; k9 }
+  c: { x10; x11; x12; x13; x14; y10; y11; y12; y13; y14; w10; w11; w12; w13; w14; z10; z11; z12; z13; z14; f10; f11; f12; f13; f14; k10; k11; k12; k13; k14 }
+  p: { a; b; c }
+
+=== Evaluation Metrics [flow-insensitive] for function 'main' ===
+  pointer variables tracked          : 5
+  avg points-to set size             : 36.600
+  #may-alias pairs                   : 3
+  #must-alias pairs                  : 0
+  analysis time                      : 0.484 ms
+  program points analyzed            : 277
+  abstract objects                   : 95
+  fixpoint iterations                : 2
+============================================

@@ -1,0 +1,5 @@
+=== Steensgaard Equivalence Classes ===
+Class #0: { b } -> pts -> { call1, call3, call, call2 }
+Class #1: { a } -> pts -> { call1, call3, call, call2 }
+Class #2: { call1, call3, call, call2 }
+Time: 0.092 ms

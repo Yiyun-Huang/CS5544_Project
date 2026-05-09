@@ -1,0 +1,104 @@
+=== Steensgaard Equivalence Classes ===
+Class #0: {  }
+Class #1: { parent } -> pts -> {  }
+Class #2: { right } -> pts -> {  }
+Class #3: { left } -> pts -> {  }
+Time: 0.072 ms
+=== Steensgaard Equivalence Classes ===
+Class #0: { parent5 } -> pts -> { parent.0 }
+Class #1: { left9 } -> pts -> { call }
+Class #2: { parent.0 }
+Class #3: { right11 } -> pts -> { call }
+Class #4: { call }
+Class #5: { left } -> pts -> {  }
+Class #6: { g_root } -> pts -> { call }
+Class #7: {  }
+Class #8: {  }
+Class #9: { right } -> pts -> {  }
+Time: 0.015 ms
+=== Steensgaard Equivalence Classes ===
+Class #0: {  }
+Class #1: { left } -> pts -> {  }
+Class #2: {  }
+Class #3: { right } -> pts -> {  }
+Class #4: {  }
+Class #5: { g_root } -> pts -> {  }
+Time: 0.024 ms
+=== Steensgaard Equivalence Classes ===
+Class #0: {  }
+Class #1: { left } -> pts -> {  }
+Class #2: {  }
+Class #3: {  }
+Class #4: { arrayidx2 } -> pts -> {  }
+Class #5: { right } -> pts -> {  }
+Class #6: { arrayidx } -> pts -> {  }
+Class #7: {  }
+Class #8: {  }
+Class #9: { right12 } -> pts -> {  }
+Class #10: { left5 } -> pts -> {  }
+Class #11: { arrayidx7 } -> pts -> {  }
+Class #12: {  }
+Class #13: { arrayidx14 } -> pts -> {  }
+Class #14: { g_root } -> pts -> {  }
+Time: 0.013 ms
+=== Steensgaard Equivalence Classes ===
+Class #0: { right4 } -> pts -> {  }
+Class #1: { left5 } -> pts -> {  }
+Class #2: {  }
+Class #3: {  }
+Class #4: { arrayidx } -> pts -> {  }
+Class #5: { arrayidx2 } -> pts -> {  }
+Class #6: {  }
+Class #7: { right } -> pts -> {  }
+Class #8: {  }
+Class #9: { g_root } -> pts -> {  }
+Class #10: { left3 } -> pts -> {  }
+Class #11: {  }
+Class #12: {  }
+Class #13: { left } -> pts -> {  }
+Class #14: { left8 } -> pts -> {  }
+Class #15: {  }
+Class #16: { arrayidx10 } -> pts -> {  }
+Class #17: { right12 } -> pts -> {  }
+Class #18: { right15 } -> pts -> {  }
+Class #19: {  }
+Class #20: { arrayidx17 } -> pts -> {  }
+Time: 0.015 ms
+=== Steensgaard Equivalence Classes ===
+Class #0: {  }
+Class #1: { right } -> pts -> {  }
+Class #2: { arrayidx7 } -> pts -> {  }
+Class #3: { left5 } -> pts -> {  }
+Class #4: { arrayidx } -> pts -> {  }
+Class #5: { left } -> pts -> {  }
+Class #6: { g_root } -> pts -> {  }
+Class #7: {  }
+Class #8: {  }
+Class #9: {  }
+Class #10: { arrayidx14 } -> pts -> {  }
+Class #11: { arrayidx2 } -> pts -> {  }
+Class #12: {  }
+Class #13: { right12 } -> pts -> {  }
+Class #14: {  }
+Time: 0.011 ms
+=== Steensgaard Equivalence Classes ===
+Class #0: {  }
+Class #1: { right } -> pts -> {  }
+Class #2: { arrayidx7 } -> pts -> {  }
+Class #3: { arrayidx } -> pts -> {  }
+Class #4: { left } -> pts -> {  }
+Class #5: { g_root } -> pts -> {  }
+Class #6: {  }
+Class #7: { left5 } -> pts -> {  }
+Class #8: {  }
+Class #9: { arrayidx13 } -> pts -> {  }
+Class #10: {  }
+Class #11: { arrayidx2 } -> pts -> {  }
+Class #12: {  }
+Class #13: { right11 } -> pts -> {  }
+Class #14: {  }
+Time: 0.012 ms
+=== Steensgaard Equivalence Classes ===
+Class #0: {  }
+Class #1: { g_root } -> pts -> {  }
+Time: 0.006 ms

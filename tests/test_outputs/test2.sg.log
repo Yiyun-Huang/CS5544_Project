@@ -1,0 +1,10 @@
+=== Steensgaard Equivalence Classes ===
+Class #0: { call, call3, call2, call1 }
+Class #1: { r } -> pts -> { call, call3, call2, call1 }
+Class #2: { q } -> pts -> { call, call3, call2, call1 }
+Class #3: { p } -> pts -> { call, call3, call2, call1 }
+Time: 0.238 ms
+=== Steensgaard Equivalence Classes ===
+Class #0: { a } -> pts -> { b, c, d }
+Class #1: { b, c, d } -> pts -> { b, c, d }
+Time: 0.027 ms

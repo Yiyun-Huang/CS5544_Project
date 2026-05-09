@@ -1,0 +1,56 @@
+=== Steensgaard Equivalence Classes ===
+Class #0: {  }
+Class #1: { next } -> pts -> {  }
+Time: 0.125 ms
+=== Steensgaard Equivalence Classes ===
+Class #0: { g_tail } -> pts -> { call }
+Class #1: { next } -> pts -> { call }
+Class #2: { call }
+Class #3: { g_head } -> pts -> { call }
+Time: 0.008 ms
+=== Steensgaard Equivalence Classes ===
+Class #0: { g_head } -> pts -> { call }
+Class #1: { g_tail } -> pts -> { call }
+Class #2: { call }
+Class #3: { next } -> pts -> { call }
+Time: 0.005 ms
+=== Steensgaard Equivalence Classes ===
+Class #0: { next4 } -> pts -> {  }
+Class #1: { g_tail } -> pts -> {  }
+Class #2: {  }
+Class #3: {  }
+Class #4: { next } -> pts -> {  }
+Class #5: { g_head } -> pts -> {  }
+Time: 0.006 ms
+=== Steensgaard Equivalence Classes ===
+Class #0: { next } -> pts -> {  }
+Class #1: { g_head } -> pts -> {  }
+Class #2: {  }
+Class #3: {  }
+Time: 0.003 ms
+=== Steensgaard Equivalence Classes ===
+Class #0: { g_head } -> pts -> { prev.0 }
+Class #1: {  }
+Class #2: { next1 } -> pts -> {  }
+Class #3: { next2 } -> pts -> { prev.0 }
+Class #4: { prev.0 }
+Class #5: { g_tail } -> pts -> { prev.0 }
+Time: 0.005 ms
+=== Steensgaard Equivalence Classes ===
+Class #0: { next } -> pts -> { other_head }
+Class #1: { other_tail }
+Class #2: { g_tail } -> pts -> { other_tail }
+Class #3: { other_head }
+Class #4: { g_head } -> pts -> { other_head }
+Time: 0.005 ms
+=== Steensgaard Equivalence Classes ===
+Class #0: { next7 } -> pts -> {  }
+Class #1: {  }
+Class #2: { call3 }
+Class #3: { next } -> pts -> { call2 }
+Class #4: {  }
+Class #5: { next4 } -> pts -> { call3 }
+Class #6: { g_tail } -> pts -> {  }
+Class #7: { g_head } -> pts -> {  }
+Class #8: { call2 }
+Time: 0.008 ms
